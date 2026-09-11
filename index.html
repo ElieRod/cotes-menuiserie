@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cotes Menuiserie</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="app-header">
+    <h1>Rapport de Cotes Menuiserie</h1>
+    <p class="subtitle">Saisissez les repères et générez votre rapport PDF</p>
+  </header>
+
+  <main>
+    <section class="chantier-info">
+      <h2>Informations chantier</h2>
+      <div class="form-row">
+        <label>Nom du client / dossier
+          <input type="text" id="nomClient" placeholder="Ex: DECARRION">
+        </label>
+        <label>Date
+          <input type="date" id="dateRapport">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Matériau / Coloris
+          <input type="text" id="materiauColoris" placeholder="Ex: PVC bicoloration gris anthracite 7016 / blanc">
+        </label>
+      </div>
+    </section>
+
+    <section class="reperes-section">
+      <h2>Repères</h2>
+      <div id="reperesContainer"></div>
+      <button id="ajouterRepere" type="button">+ Ajouter un repère</button>
+    </section>
+
+    <section class="actions">
+      <button id="genererPdf" type="button">Générer le rapport PDF</button>
+    </section>
+  </main>
+
+  <template id="repere-template">
+    <div class="repere-card">
+      <div class="repere-header">
+        <h3>Repère <span class="repere-numero"></span></h3>
+        <button type="button" class="supprimer-repere">Supprimer</button>
+      </div>
+      <div class="form-row">
+        <label>Type de menuiserie
+          <select class="type-menuiserie">
+            <option value="fenetre-1-vantail">Fenêtre 1 vantail</option>
+            <option value="fenetre-2-vantaux">Fenêtre 2 vantaux</option>
+            <option value="porte-fenetre-1-vantail">Porte-fenêtre 1 vantail</option>
+            <option value="porte-fenetre-2-vantaux">Porte-fenêtre 2 vantaux</option>
+            <option value="chassis-fixe">Châssis fixe</option>
+            <option value="coulissant">Coulissant</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Largeur (mm)
+          <input type="number" class="largeur" min="0">
+        </label>
+        <label>Hauteur (mm)
+          <input type="number" class="hauteur" min="0">
+        </label>
+        <label>Cote bâti (mm)
+          <input type="number" class="cote-bati" min="0">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Type de vitrage
+          <select class="type-vitrage">
+            <option value="depoli">Vitrage dépoli</option>
+            <option value="fixe-securite">Vitrage fixe sécurité</option>
+            <option value="clair">Vitrage clair</option>
+            <option value="plein">Plein (sans vitrage)</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
+        <label>Référence panneau
+          <input type="text" class="reference-panneau" placeholder="Ex: SASHA 1">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Teinte PVC extérieur
+          <input type="text" class="teinte-exterieur" placeholder="Ex: Gris anthracite 7016">
+        </label>
+        <label>Teinte PVC intérieur
+          <input type="text" class="teinte-interieur" placeholder="Ex: Blanc">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Remarques
+          <textarea class="remarques" rows="2" placeholder="Ex: insert vitrage possible ?"></textarea>
+        </label>
+      </div>
+    </div>
+  </template>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
