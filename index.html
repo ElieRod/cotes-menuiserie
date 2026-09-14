@@ -3,47 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotation Menuiseries - Applique/Tunnel/Feuillure/Rénovation</title>
+    <title>Cotations Menuiserie</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📋 Cotation Menuiseries</h1>
-            <p>Applique • Tunnel • Feuillure • Rénovation</p>
-        </header>
-
-        <form id="cotationForm">
-            <!-- Section Client -->
-            <fieldset>
-                <legend>📋 Client & Références</legend>
-                <div class="form-group">
-                    <label for="client">Nom du client</label>
-                    <input type="text" id="client" name="client" required>
-                </div>
-                <div class="form-group">
-                    <label for="reference">Référence chantier</label>
-                    <input type="text" id="reference" name="reference" required>
-                </div>
-                <div class="form-group">
-                    <label for="date">Date</label>
-                    <input type="date" id="date" name="date" required>
-                </div>
-            </fieldset>
-
-            <!-- Section Menuiseries -->
-            <fieldset>
-                <legend>🪟 Menuiseries</legend>
-                <div id="menuiseriesContainer"></div>
-                <button type="button" id="addMenuiserie" class="btn-secondary">+ Ajouter une menuiserie</button>
-            </fieldset>
-
-            <!-- Boutons Actions -->
-            <div class="button-group">
-                <button type="button" id="generatePdf" class="btn-primary">📄 Générer PDF</button>
-                <button type="reset" class="btn-secondary">🔄 Réinitialiser</button>
+        <h1>Cotations Menuiserie</h1>
+        
+        <form id="quoteForm">
+            <div class="form-group">
+                <label for="menuisery">Type de Menuiserie :</label>
+                <select id="menuisery" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="fenetre">Fenêtre</option>
+                    <option value="porte">Porte</option>
+                    <option value="porteFenetre">Porte-Fenêtre</option>
+                    <option value="baie">Baie Vitrée</option>
+                    <option value="lucarne">Lucarne</option>
+                    <option value="velux">Velux</option>
+                    <option value="claustra">Claustra</option>
+                    <option value="pergola">Pergola</option>
+                    <option value="verriere">Verrière</option>
+                    <option value="cloison">Cloison Vitrée</option>
+                </select>
             </div>
+
+            <div class="form-group">
+                <label for="pose">Type de Pose :</label>
+                <select id="pose" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="applique">Applique</option>
+                    <option value="tunnel">Tunnel</option>
+                    <option value="feuillure">Feuillure</option>
+                    <option value="renovation">Rénovation</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="width">Largeur (mm) :</label>
+                <input type="number" id="width" min="100" max="3000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="height">Hauteur (mm) :</label>
+                <input type="number" id="height" min="100" max="3000" required>
+            </div>
+
+            <div class="form-group">
+                <label for="material">Matériau :</label>
+                <select id="material" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="pvc">PVC</option>
+                    <option value="alu">Aluminium</option>
+                    <option value="bois">Bois</option>
+                    <option value="composite">Composite</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="glazing">Type de Vitrage :</label>
+                <select id="glazing" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="simple">Simple</option>
+                    <option value="double">Double</option>
+                    <option value="triple">Triple</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="client">Nom du Client :</label>
+                <input type="text" id="client" required>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date :</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <button type="submit" class="btn-submit">Générer Rapport</button>
         </form>
+
+        <div id="report" class="report" style="display:none;">
+            <div id="reportContent">
+                <h2>Rapport de Cotation</h2>
+                <div class="report-header">
+                    <p><strong>Client :</strong> <span id="reportClient"></span></p>
+                    <p><strong>Date :</strong> <span id="reportDate"></span></p>
+                </div>
+
+                <div class="report-specs">
+                    <h3>Spécifications</h3>
+                    <p><strong>Type de Menuiserie :</strong> <span id="reportMenuisery"></span></p>
+                    <p><strong>Type de Pose :</strong> <span id="reportPose"></span></p>
+                    <p><strong>Dimensions :</strong> <span id="reportDimensions"></span></p>
+                    <p><strong>Matériau :</strong> <span id="reportMaterial"></span></p>
+                    <p><strong>Vitrage :</strong> <span id="reportGlazing"></span></p>
+                </div>
+
+                <div class="report-schema">
+                    <h3>Schéma</h3>
+                    <svg id="reportSchema" width="300" height="300" style="border: 1px solid #ccc;"></svg>
+                </div>
+            </div>
+
+            <button type="button" class="btn-pdf" onclick="generatePDF()">📥 Télécharger en PDF</button>
+            <button type="button" class="btn-new" onclick="resetForm()">➕ Nouvelle Cotation</button>
+        </div>
     </div>
 
     <script src="schemas.js"></script>
