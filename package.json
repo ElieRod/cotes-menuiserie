@@ -1,0 +1,21 @@
+{
+  "name": "cotes-menuiserie",
+  "version": "1.0.0",
+  "description": "Application de génération de rapports de cotation pour menuiseries (fenêtres, portes, etc.)",
+  "main": "app.js",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000"
+  },
+  "keywords": [
+    "menuiserie",
+    "cotation",
+    "fenêtres",
+    "portes",
+    "rapport",
+    "pdf"
+  ],
+  "author": "ElieRod",
+  "license": "MIT",
+  "dependencies": {}
+}
