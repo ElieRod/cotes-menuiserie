@@ -1,313 +1,348 @@
-// ====================================
-// COTATION MENUISERIES - APP.JS
-// ====================================
+// Gestion du formulaire de cotation menuiserie
+const quoteForm = document.getElementById('quoteForm');
+const reportSection = document.getElementById('report');
+const reportContent = document.getElementById('reportContent');
 
-// Import des schémas
-const SCHEMAS = DISPONIBLE_SCHEMAS;
+// Charger les schémas
+let menuiserieSchemas = {};
+loadSchemas();
 
-// État de l'application
-let menuiseries = [];
-let menuiserieCounter = 0;
-
-// ====================================
-// FONCTIONS UTILITAIRES
-// ====================================
-
-function generateId() {
-    return `menuiserie_${++menuiserieCounter}`;
+function loadSchemas() {
+  if (typeof schemas !== 'undefined') {
+    menuiserieSchemas = schemas;
+  }
 }
 
-function getCotationData() {
-    return {
-        client: document.getElementById('client').value,
-        reference: document.getElementById('reference').value,
-        date: document.getElementById('date').value
-    };
-}
-
-function getMenuiserieData(id) {
-    const elem = document.getElementById(id);
-    return {
-        id,
-        bicoloration: elem.querySelector(`[data-field="bicoloration_${id}"]`).value,
-        pose: elem.querySelector(`[data-field="pose_${id}"]`).value,
-        ouvertures: getOuverturesData(id)
-    };
-}
-
-function getOuverturesData(menuiserieId) {
-    const ouvertures = [];
-    const container = document.querySelector(`[data-menuiserie="${menuiserieId}"] .ouvertures-container`);
-    
-    if (!container) return ouvertures;
-
-    container.querySelectorAll('.ouverture-item').forEach((item, index) => {
-        const typeSelect = item.querySelector(`[data-field="type_${menuiserieId}_${index}"]`);
-        const largeursInput = item.querySelector(`[data-field="largeurs_${menuiserieId}_${index}"]`);
-        const hauteursInput = item.querySelector(`[data-field="hauteurs_${menuiserieId}_${index}"]`);
-        const schemaSelect = item.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
-        
-        if (typeSelect && largeursInput && hauteursInput && schemaSelect) {
-            ouvertures.push({
-                type: typeSelect.value,
-                largeurs: largeursInput.value.split(',').map(v => v.trim()).filter(v => v),
-                hauteurs: hauteursInput.value.split(',').map(v => v.trim()).filter(v => v),
-                schema: schemaSelect.value
-            });
-        }
-    });
-
-    return ouvertures;
-}
-
-// ====================================
-// GESTION MENUISERIES
-// ====================================
-
+// Ajouter une menuiserie
 function addMenuiserie() {
-    const id = generateId();
-    menuiseries.push(id);
-    renderMenuiserie(id);
+  const container = document.getElementById('menuiseries-container');
+  const index = container.children.length;
+  
+  const menuiserieDiv = document.createElement('div');
+  menuiserieDiv.className = 'menuiserie-item';
+  menuiserieDiv.innerHTML = `
+    <h3>Menuiserie ${index + 1}</h3>
+    <div class="form-group">
+      <label for="type-${index}">Type de menuiserie :</label>
+      <select id="type-${index}" class="menuiserie-type" onchange="updateSchema(${index})">
+        <option value="">-- Sélectionner --</option>
+        <option value="fenetre-1-vantail">Fenêtre 1 vantail</option>
+        <option value="fenetre-2-vantaux">Fenêtre 2 vantaux</option>
+        <option value="porte-1-vantail">Porte 1 vantail</option>
+        <option value="porte-2-vantaux">Porte 2 vantaux</option>
+        <option value="coulissant">Coulissant</option>
+        <option value="oscillo-battant">Oscillo-battant</option>
+        <option value="chassis-fixe">Châssis fixe</option>
+        <option value="autre">Autre</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="pose-${index}">Type de pose :</label>
+      <select id="pose-${index}">
+        <option value="Applique">Applique</option>
+        <option value="Tunnel">Tunnel</option>
+        <option value="Feuillure">Feuillure</option>
+        <option value="Rénovation">Rénovation</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="largeur-${index}">Largeur (mm) :</label>
+      <input type="number" id="largeur-${index}" min="100" max="5000" value="1000" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="hauteur-${index}">Hauteur (mm) :</label>
+      <input type="number" id="hauteur-${index}" min="100" max="5000" value="1200" required>
+    </div>
+    
+    <div class="form-group">
+      <label for="materiau-${index}">Matériau :</label>
+      <select id="materiau-${index}">
+        <option value="PVC">PVC</option>
+        <option value="Aluminium">Aluminium</option>
+        <option value="Bois">Bois</option>
+        <option value="Bois-Aluminium">Bois-Aluminium</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="vitrage-${index}">Type de vitrage :</label>
+      <select id="vitrage-${index}">
+        <option value="Simple">Simple</option>
+        <option value="Double">Double</option>
+        <option value="Triple">Triple</option>
+      </select>
+    </div>
+    
+    <div class="schema-preview" id="schema-${index}">
+      <svg viewBox="0 0 200 200" width="150" height="150">
+        <rect width="200" height="200" fill="#e0e0e0" stroke="#999" stroke-width="2"/>
+        <text x="100" y="100" text-anchor="middle" dy="0.3em" fill="#999">Sélectionner un type</text>
+      </svg>
+    </div>
+    
+    <button type="button" class="btn-danger" onclick="removeMenuiserie(this)">Supprimer</button>
+  `;
+  
+  container.appendChild(menuiserieDiv);
 }
 
-function removeMenuiserie(id) {
-    menuiseries = menuiseries.filter(m => m !== id);
-    document.querySelector(`[data-menuiserie="${id}"]`).remove();
-}
-
-function renderMenuiserie(id) {
-    const container = document.getElementById('menuiseriesContainer');
-    const menuiserieDiv = document.createElement('div');
-    menuiserieDiv.setAttribute('data-menuiserie', id);
-    menuiserieDiv.className = 'menuiserie-section';
-
-    menuiserieDiv.innerHTML = `
-        <div class="menuiserie-header">
-            <h3>Menuiserie #${menuiseries.indexOf(id) + 1}</h3>
-            <button type="button" class="btn-danger" data-remove="${id}">✕ Supprimer</button>
-        </div>
-
-        <div class="form-group">
-            <label for="bicoloration_${id}">Bicoloration</label>
-            <select id="bicoloration_${id}" data-field="bicoloration_${id}" required>
-                <option value="">-- Choisir --</option>
-                <option value="Mono">Mono</option>
-                <option value="Bi">Bi</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="pose_${id}">Type de pose</label>
-            <select id="pose_${id}" data-field="pose_${id}" required>
-                <option value="">-- Choisir --</option>
-                <option value="Applique">Applique</option>
-                <option value="Tunnel">Tunnel</option>
-                <option value="Feuillure">Feuillure</option>
-                <option value="Rénovation">Rénovation</option>
-            </select>
-        </div>
-
-        <div class="ouvertures-container"></div>
-        <button type="button" class="btn-secondary" data-add-ouverture="${id}">+ Ajouter une ouverture</button>
+// Mettre à jour le schéma SVG
+function updateSchema(index) {
+  const typeSelect = document.getElementById(`type-${index}`);
+  const type = typeSelect.value;
+  const schemaContainer = document.getElementById(`schema-${index}`);
+  
+  if (type && menuiserieSchemas[type]) {
+    schemaContainer.innerHTML = menuiserieSchemas[type];
+  } else {
+    schemaContainer.innerHTML = `
+      <svg viewBox="0 0 200 200" width="150" height="150">
+        <rect width="200" height="200" fill="#e0e0e0" stroke="#999" stroke-width="2"/>
+        <text x="100" y="100" text-anchor="middle" dy="0.3em" fill="#999">Schéma non disponible</text>
+      </svg>
     `;
-
-    container.appendChild(menuiserieDiv);
-
-    // Event listeners
-    menuiserieDiv.querySelector(`[data-remove="${id}"]`).addEventListener('click', () => removeMenuiserie(id));
-    menuiserieDiv.querySelector(`[data-add-ouverture="${id}"]`).addEventListener('click', () => addOuverture(id));
-
-    // Ajouter une première ouverture par défaut
-    addOuverture(id);
+  }
 }
 
-// ====================================
-// GESTION OUVERTURES
-// ====================================
+// Supprimer une menuiserie
+function removeMenuiserie(button) {
+  button.parentElement.remove();
+}
 
-function addOuverture(menuiserieId) {
-    const menuiserieDiv = document.querySelector(`[data-menuiserie="${menuiserieId}"]`);
-    const container = menuiserieDiv.querySelector('.ouvertures-container');
-    const index = container.querySelectorAll('.ouverture-item').length;
-
-    const ouvertureDiv = document.createElement('div');
-    ouvertureDiv.className = 'ouverture-item';
-    ouvertureDiv.innerHTML = `
-        <h4>Ouverture ${index + 1}</h4>
-        
-        <div class="form-group">
-            <label for="type_${menuiserieId}_${index}">Type d'ouverture</label>
-            <select id="type_${menuiserieId}_${index}" data-field="type_${menuiserieId}_${index}" required>
-                <option value="">-- Choisir --</option>
-                <option value="Fenêtre">Fenêtre</option>
-                <option value="Porte">Porte</option>
-                <option value="Baie vitrée">Baie vitrée</option>
-                <option value="Autre">Autre</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="largeurs_${menuiserieId}_${index}">Largeurs (mm, séparées par virgule)</label>
-            <input type="text" id="largeurs_${menuiserieId}_${index}" data-field="largeurs_${menuiserieId}_${index}" placeholder="Ex: 1000, 1200, 1500">
-        </div>
-
-        <div class="form-group">
-            <label for="hauteurs_${menuiserieId}_${index}">Hauteurs (mm, séparées par virgule)</label>
-            <input type="text" id="hauteurs_${menuiserieId}_${index}" data-field="hauteurs_${menuiserieId}_${index}" placeholder="Ex: 1200, 1500">
-        </div>
-
-        <div class="form-group">
-            <label for="schema_${menuiserieId}_${index}">Schéma</label>
-            <select id="schema_${menuiserieId}_${index}" data-field="schema_${menuiserieId}_${index}" required>
-                <option value="">-- Choisir --</option>
-                ${Object.entries(SCHEMAS).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}
-            </select>
-        </div>
-
-        <div class="schema-preview" id="preview_${menuiserieId}_${index}"></div>
-        
-        <button type="button" class="btn-secondary btn-small" data-remove-ouverture="${menuiserieId}_${index}">✕ Supprimer</button>
+// Générer le rapport
+function generateReport() {
+  const container = document.getElementById('menuiseries-container');
+  const menuiseries = container.querySelectorAll('.menuiserie-item');
+  
+  if (menuiseries.length === 0) {
+    alert('Veuillez ajouter au moins une menuiserie');
+    return;
+  }
+  
+  // Récupérer les informations client
+  const client = document.getElementById('client').value.trim() || 'Client';
+  const adresse = document.getElementById('adresse').value.trim() || 'Adresse non spécifiée';
+  const codePostal = document.getElementById('codePostal').value.trim() || '';
+  const ville = document.getElementById('ville').value.trim() || '';
+  const telephone = document.getElementById('telephone').value.trim() || '';
+  const email = document.getElementById('email').value.trim() || '';
+  
+  // Construire le HTML du rapport
+  let reportHTML = `
+    <div class="report-header">
+      <h1>📋 Rapport de Cotation Menuiserie</h1>
+      <p class="report-date">Date : ${new Date().toLocaleDateString('fr-FR')}</p>
+    </div>
+    
+    <div class="report-section">
+      <h2>Informations Client</h2>
+      <table class="report-table">
+        <tr>
+          <td><strong>Nom :</strong></td>
+          <td>${escapeHtml(client)}</td>
+        </tr>
+        <tr>
+          <td><strong>Adresse :</strong></td>
+          <td>${escapeHtml(adresse)}</td>
+        </tr>
+        <tr>
+          <td><strong>Localité :</strong></td>
+          <td>${escapeHtml(codePostal)} ${escapeHtml(ville)}</td>
+        </tr>
+        <tr>
+          <td><strong>Téléphone :</strong></td>
+          <td>${escapeHtml(telephone)}</td>
+        </tr>
+        <tr>
+          <td><strong>Email :</strong></td>
+          <td>${escapeHtml(email)}</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div class="report-section">
+      <h2>Détail des Menuiseries</h2>
+  `;
+  
+  let totalPrice = 0;
+  
+  menuiseries.forEach((item, idx) => {
+    const type = document.getElementById(`type-${idx}`).value;
+    const pose = document.getElementById(`pose-${idx}`).value;
+    const largeur = parseInt(document.getElementById(`largeur-${idx}`).value) || 0;
+    const hauteur = parseInt(document.getElementById(`hauteur-${idx}`).value) || 0;
+    const materiau = document.getElementById(`materiau-${idx}`).value;
+    const vitrage = document.getElementById(`vitrage-${idx}`).value;
+    
+    const surface = (largeur * hauteur) / 1000000; // en m²
+    const prixBase = calculatePrice(type, materiau, surface);
+    const remise = prixBase * 0.10; // 10% de remise
+    const prixFinal = prixBase - remise;
+    totalPrice += prixFinal;
+    
+    reportHTML += `
+      <div class="menuiserie-details">
+        <h3>Menuiserie ${idx + 1}</h3>
+        <table class="report-table">
+          <tr>
+            <td><strong>Type :</strong></td>
+            <td>${escapeHtml(type.replace(/-/g, ' ').toUpperCase())}</td>
+          </tr>
+          <tr>
+            <td><strong>Type de pose :</strong></td>
+            <td>${escapeHtml(pose)}</td>
+          </tr>
+          <tr>
+            <td><strong>Dimensions :</strong></td>
+            <td>${largeur} mm (L) × ${hauteur} mm (H) = ${surface.toFixed(2)} m²</td>
+          </tr>
+          <tr>
+            <td><strong>Matériau :</strong></td>
+            <td>${escapeHtml(materiau)}</td>
+          </tr>
+          <tr>
+            <td><strong>Vitrage :</strong></td>
+            <td>${escapeHtml(vitrage)}</td>
+          </tr>
+          <tr>
+            <td><strong>Prix unitaire :</strong></td>
+            <td>${prixBase.toFixed(2)} €</td>
+          </tr>
+          <tr>
+            <td><strong>Remise (10%) :</strong></td>
+            <td>-${remise.toFixed(2)} €</td>
+          </tr>
+          <tr>
+            <td><strong>Prix TTC :</strong></td>
+            <td><strong>${prixFinal.toFixed(2)} €</strong></td>
+          </tr>
+        </table>
+      </div>
     `;
-
-    container.appendChild(ouvertureDiv);
-
-    // Event listeners
-    const schemaSelect = ouvertureDiv.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
-    schemaSelect.addEventListener('change', () => {
-        updateSchemaPreview(menuiserieId, index);
-    });
-
-    ouvertureDiv.querySelector(`[data-remove-ouverture="${menuiserieId}_${index}"]`).addEventListener('click', () => {
-        ouvertureDiv.remove();
-    });
+  });
+  
+  reportHTML += `
+    </div>
+    
+    <div class="report-section report-footer">
+      <h2>Récapitulatif</h2>
+      <table class="report-table">
+        <tr>
+          <td><strong>Nombre de menuiseries :</strong></td>
+          <td>${menuiseries.length}</td>
+        </tr>
+        <tr>
+          <td><strong>Total TTC :</strong></td>
+          <td><strong style="color: #667eea; font-size: 1.2em;">${totalPrice.toFixed(2)} €</strong></td>
+        </tr>
+      </table>
+      <p style="text-align: center; margin-top: 20px; font-style: italic;">
+        Merci pour votre confiance ! 🙏
+      </p>
+    </div>
+  `;
+  
+  reportContent.innerHTML = reportHTML;
+  reportSection.style.display = 'block';
+  reportSection.scrollIntoView({ behavior: 'smooth' });
 }
 
-function updateSchemaPreview(menuiserieId, index) {
-    const schemaSelect = document.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
-    const previewDiv = document.getElementById(`preview_${menuiserieId}_${index}`);
-    const schemaKey = schemaSelect.value;
+// Calculer le prix
+function calculatePrice(type, materiau, surface) {
+  const basePrice = {
+    'fenetre-1-vantail': 250,
+    'fenetre-2-vantaux': 400,
+    'porte-1-vantail': 350,
+    'porte-2-vantaux': 500,
+    'coulissant': 450,
+    'oscillo-battant': 300,
+    'chassis-fixe': 200,
+    'autre': 300
+  };
+  
+  const materiauMultiplier = {
+    'PVC': 1.0,
+    'Aluminium': 1.5,
+    'Bois': 2.0,
+    'Bois-Aluminium': 2.5
+  };
+  
+  const prix = (basePrice[type] || 300) * (materiauMultiplier[materiau] || 1) * (1 + surface * 0.1);
+  return prix;
+}
 
-    if (!schemaKey) {
-        previewDiv.innerHTML = '';
-        return;
+// Échapper les caractères HTML
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Générer le PDF
+async function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const html2canvas = window.html2canvas;
+  
+  if (!jsPDF || !html2canvas) {
+    alert('Les bibliothèques PDF ne sont pas chargées. Vérifiez votre connexion internet.');
+    return;
+  }
+  
+  if (!reportContent.innerHTML.trim()) {
+    alert('Veuillez générer un aperçu du rapport en premier');
+    return;
+  }
+  
+  const element = reportContent;
+  const canvas = await html2canvas(element, { scale: 2 });
+  const imgData = canvas.toDataURL('image/png');
+  
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const imgWidth = 210; // Largeur A4 en mm
+  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  
+  let heightLeft = imgHeight;
+  let position = 0;
+  
+  while (heightLeft > 0) {
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= 297; // Hauteur A4 en mm
+    position += 297;
+    if (heightLeft > 0) {
+      pdf.addPage();
     }
-
-    // Charger le SVG
-    const svgPath = `assets/schemas/${schemaKey}.svg`;
-    fetch(svgPath)
-        .then(response => response.text())
-        .then(svgContent => {
-            previewDiv.innerHTML = svgContent;
-            previewDiv.querySelector('svg').style.maxWidth = '200px';
-            previewDiv.querySelector('svg').style.height = 'auto';
-        })
-        .catch(err => console.error('Erreur chargement SVG:', err));
+  }
+  
+  // Télécharger le PDF
+  const client = document.getElementById('client').value.trim() || 'rapport';
+  pdf.save(`cotation-${client}-${new Date().getTime()}.pdf`);
 }
 
-// ====================================
-// GÉNÉRATION PDF
-// ====================================
-
-function generatePDF() {
-    // Validation basique
-    if (!document.getElementById('client').value) {
-        alert('Veuillez remplir le nom du client');
-        return;
-    }
-
-    const cotationData = getCotationData();
-    const allMenuiseries = menuiseries.map(id => getMenuiserieData(id));
-
-    // Créer contenu HTML pour PDF
-    const htmlContent = generateHTMLReport(cotationData, allMenuiseries);
-
-    // Créer blob et télécharger
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cotation_${cotationData.reference || 'menuiseries'}_${cotationData.date}.html`;
-    a.click();
+// Réinitialiser le formulaire
+function resetForm() {
+  quoteForm.reset();
+  const container = document.getElementById('menuiseries-container');
+  container.innerHTML = '';
+  reportSection.style.display = 'none';
+  addMenuiserie(); // Ajouter une menuiserie par défaut
 }
 
-function generateHTMLReport(cotation, menuiseries) {
-    let html = `
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <title>Rapport Cotation</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; }
-            h1 { color: #333; text-align: center; }
-            .cotation-header { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
-            .cotation-header p { margin: 8px 0; }
-            .menuiserie-section { page-break-inside: avoid; margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
-            .menuiserie-section h2 { color: #0066cc; margin-top: 0; }
-            .ouverture-item { margin: 15px 0; padding: 10px; background: #fafafa; border-left: 4px solid #0066cc; }
-            .schema-img { max-width: 300px; margin: 10px 0; }
-            .dims { margin: 10px 0; font-size: 14px; }
-        </style>
-    </head>
-    <body>
-        <h1>📋 Rapport Cotation Menuiseries</h1>
-        <div class="cotation-header">
-            <p><strong>Client:</strong> ${cotation.client}</p>
-            <p><strong>Référence:</strong> ${cotation.reference}</p>
-            <p><strong>Date:</strong> ${cotation.date}</p>
-        </div>
-    `;
-
-    menuiseries.forEach((menu, idx) => {
-        html += `
-        <div class="menuiserie-section">
-            <h2>Menuiserie ${idx + 1}</h2>
-            <p><strong>Bicoloration:</strong> ${menu.bicoloration}</p>
-            <p><strong>Type de pose:</strong> ${menu.pose}</p>
-        `;
-
-        menu.ouvertures.forEach((ouv, ouvIdx) => {
-            html += `
-            <div class="ouverture-item">
-                <h3>Ouverture ${ouvIdx + 1}</h3>
-                <p><strong>Type:</strong> ${ouv.type}</p>
-                <div class="dims">
-                    <strong>Largeurs (mm):</strong> ${ouv.largeurs.join(', ')}
-                </div>
-                <div class="dims">
-                    <strong>Hauteurs (mm):</strong> ${ouv.hauteurs.join(', ')}
-                </div>
-                ${ouv.schema ? `<div class="schema-info"><strong>Schéma:</strong> ${SCHEMAS[ouv.schema]}</div>` : ''}
-            </div>
-            `;
-        });
-
-        html += `</div>`;
+// Initialisation au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  // Ajouter une menuiserie par défaut
+  addMenuiserie();
+  
+  // Écouter la soumission du formulaire
+  if (quoteForm) {
+    quoteForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      generateReport();
     });
-
-    html += `
-        <footer style="margin-top: 50px; text-align: center; color: #999; font-size: 12px;">
-            <p>Généré le ${new Date().toLocaleString('fr-FR')}</p>
-        </footer>
-    </body>
-    </html>
-    `;
-
-    return html;
-}
-
-// ====================================
-// INITIALIZATION
-// ====================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Définir la date du jour par défaut
-    document.getElementById('date').valueAsDate = new Date();
-
-    // Event listeners
-    document.getElementById('addMenuiserie').addEventListener('click', addMenuiserie);
-    document.getElementById('generatePdf').addEventListener('click', generatePDF);
-
-    // Ajouter une première menuiserie
-    addMenuiserie();
+  }
+  
+  // Charger les schémas
+  loadSchemas();
 });
