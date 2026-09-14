@@ -1,126 +1,279 @@
-// Gestion des repères et génération du rapport PDF
+// Import des schémas
+const schémas = getSchemas();
 
-let compteurRepere = 0;
+// Récupérer les éléments du DOM
+const form = document.getElementById('cotationForm');
+const previewBtn = document.getElementById('previewBtn');
+const generateBtn = document.getElementById('generateBtn');
+const previewDiv = document.getElementById('preview');
+const previewContent = document.getElementById('previewContent');
+const closePreviewBtn = document.getElementById('closePreview');
 
-const reperesContainer = document.getElementById('reperesContainer');
-const template = document.getElementById('repere-template');
-
-function ajouterRepere() {
-  compteurRepere += 1;
-  const clone = template.content.cloneNode(true);
-  clone.querySelector('.repere-numero').textContent = compteurRepere;
-  clone.querySelector('.supprimer-repere').addEventListener('click', (e) => {
-    e.target.closest('.repere-card').remove();
-    renumeroterReperes();
-  });
-  reperesContainer.appendChild(clone);
-}
-
-function renumeroterReperes() {
-  const cards = reperesContainer.querySelectorAll('.repere-card');
-  compteurRepere = cards.length;
-  cards.forEach((card, index) => {
-    card.querySelector('.repere-numero').textContent = index + 1;
-  });
-}
-
-function lireDonneesRepere(card, index) {
-  return {
-    numero: index + 1,
-    type: card.querySelector('.type-menuiserie').selectedOptions[0].textContent,
-    largeur: card.querySelector('.largeur').value,
-    hauteur: card.querySelector('.hauteur').value,
-    coteBati: card.querySelector('.cote-bati').value,
-    typeVitrage: card.querySelector('.type-vitrage').selectedOptions[0].textContent,
-    referencePanneau: card.querySelector('.reference-panneau').value,
-    teinteExterieur: card.querySelector('.teinte-exterieur').value,
-    teinteInterieur: card.querySelector('.teinte-interieur').value,
-    remarques: card.querySelector('.remarques').value,
-  };
-}
-
-function genererPdf() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-
-  const nomClient = document.getElementById('nomClient').value || 'Client';
-  const dateRapport = document.getElementById('dateRapport').value || new Date().toLocaleDateString('fr-FR');
-  const materiauColoris = document.getElementById('materiauColoris').value || '';
-
-  const marge = 15;
-  let y = marge;
-
-  doc.setFontSize(18);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Rapport de Cotes Menuiserie', marge, y);
-  y += 8;
-
-  doc.setFontSize(11);
-  doc.setTextColor(90, 90, 90);
-  doc.text(`Client / Dossier : ${nomClient}`, marge, y);
-  y += 6;
-  doc.text(`Date : ${dateRapport}`, marge, y);
-  y += 6;
-  if (materiauColoris) {
-    doc.text(`Matériau / Coloris : ${materiauColoris}`, marge, y);
-    y += 6;
-  }
-
-  doc.setDrawColor(200, 190, 180);
-  doc.line(marge, y, 210 - marge, y);
-  y += 8;
-
-  const cards = reperesContainer.querySelectorAll('.repere-card');
-
-  cards.forEach((card, index) => {
-    const data = lireDonneesRepere(card, index);
-
-    if (y > 250) {
-      doc.addPage();
-      y = marge;
+// Afficher l'aperçu
+previewBtn.addEventListener('click', () => {
+    const formData = getFormData();
+    
+    if (!validateForm(formData)) {
+        alert('⚠️ Veuillez remplir tous les champs obligatoires !');
+        return;
     }
 
-    doc.setFillColor(250, 248, 245);
-    doc.setDrawColor(216, 207, 196);
-    doc.roundedRect(marge, y, 210 - 2 * marge, 46, 2, 2, 'FD');
+    previewContent.innerHTML = generatePreviewHTML(formData);
+    previewDiv.classList.remove('preview-hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
-    doc.setFontSize(13);
-    doc.setTextColor(122, 92, 62);
-    doc.text(`Repère ${data.numero} — ${data.type}`, marge + 4, y + 7);
+// Fermer l'aperçu
+closePreviewBtn.addEventListener('click', () => {
+    previewDiv.classList.add('preview-hidden');
+});
 
+// Générer le PDF
+generateBtn.addEventListener('click', () => {
+    const formData = getFormData();
+    
+    if (!validateForm(formData)) {
+        alert('⚠️ Veuillez remplir tous les champs obligatoires !');
+        return;
+    }
+
+    generatePDF(formData);
+});
+
+// Récupérer les données du formulaire
+function getFormData() {
+    return {
+        clientName: document.getElementById('clientName').value,
+        clientEmail: document.getElementById('clientEmail').value,
+        clientPhone: document.getElementById('clientPhone').value,
+        clientAddress: document.getElementById('clientAddress').value,
+        menuiserieType: document.getElementById('menuiserieType').value,
+        typeDepose: document.getElementById('typeDepose').value,
+        largeur: document.getElementById('largeur').value,
+        hauteur: document.getElementById('hauteur').value,
+        materiau: document.getElementById('materiau').value,
+        vitrage: document.getElementById('vitrage').value,
+        couleur: document.getElementById('couleur').value,
+        observation: document.getElementById('observation').value,
+        prixUnitaire: parseFloat(document.getElementById('prixUnitaire').value) || 0,
+        quantite: parseInt(document.getElementById('quantite').value) || 1,
+        remise: parseFloat(document.getElementById('remise').value) || 0,
+        delai: document.getElementById('delai').value,
+        dateEdition: new Date().toLocaleDateString('fr-FR'),
+        dateValidite: new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('fr-FR')
+    };
+}
+
+// Valider le formulaire
+function validateForm(data) {
+    return data.clientName && 
+           data.menuiserieType && 
+           data.typeDepose &&
+           data.largeur && 
+           data.hauteur && 
+           data.materiau && 
+           data.vitrage && 
+           data.prixUnitaire > 0;
+}
+
+// Générer l'aperçu HTML
+function generatePreviewHTML(data) {
+    const schema = schémas[data.menuiserieType] || schémas['autre'];
+    const prixTotal = (data.prixUnitaire * data.quantite) * (1 - data.remise / 100);
+
+    return `
+        <div class="report">
+            <header class="report-header">
+                <h2>Devis de Cotation Menuiserie</h2>
+                <p><strong>Date d'édition :</strong> ${data.dateEdition}</p>
+                <p><strong>Validité :</strong> jusqu'au ${data.dateValidite}</p>
+            </header>
+
+            <section class="section">
+                <h3>👤 Client</h3>
+                <p><strong>Nom :</strong> ${data.clientName}</p>
+                <p><strong>Email :</strong> ${data.clientEmail}</p>
+                <p><strong>Téléphone :</strong> ${data.clientPhone || 'N/A'}</p>
+                <p><strong>Adresse :</strong> ${data.clientAddress || 'N/A'}</p>
+            </section>
+
+            <section class="section">
+                <h3>📋 Spécifications</h3>
+                <p><strong>Type de menuiserie :</strong> ${getLabel(data.menuiserieType)}</p>
+                <p><strong>Type de pose :</strong> ${getLabel(data.typeDepose)}</p>
+                <p><strong>Dimensions :</strong> ${data.largeur} mm × ${data.hauteur} mm</p>
+                <p><strong>Matériau :</strong> ${getLabel(data.materiau)}</p>
+                <p><strong>Vitrage :</strong> ${getLabel(data.vitrage)}</p>
+                <p><strong>Couleur :</strong> ${data.couleur || 'N/A'}</p>
+                ${data.observation ? `<p><strong>Observations :</strong> ${data.observation}</p>` : ''}
+            </section>
+
+            <section class="section">
+                <h3>🖼️ Schéma</h3>
+                <div class="schema-container">
+                    ${schema}
+                </div>
+            </section>
+
+            <section class="section">
+                <h3>💰 Tarification</h3>
+                <table class="tarif-table">
+                    <tr>
+                        <td><strong>Prix unitaire</strong></td>
+                        <td>${data.prixUnitaire.toFixed(2)} €</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Quantité</strong></td>
+                        <td>${data.quantite}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sous-total</strong></td>
+                        <td>${(data.prixUnitaire * data.quantite).toFixed(2)} €</td>
+                    </tr>
+                    ${data.remise > 0 ? `
+                    <tr class="remise">
+                        <td><strong>Remise (${data.remise}%)</strong></td>
+                        <td>-${((data.prixUnitaire * data.quantite * data.remise) / 100).toFixed(2)} €</td>
+                    </tr>
+                    ` : ''}
+                    <tr class="total">
+                        <td><strong>TOTAL TTC</strong></td>
+                        <td><strong>${prixTotal.toFixed(2)} €</strong></td>
+                    </tr>
+                </table>
+                <p><strong>Délai de livraison :</strong> ${data.delai} jours</p>
+            </section>
+
+            <footer class="report-footer">
+                <p>Devis établi le ${data.dateEdition} - Merci de votre confiance !</p>
+            </footer>
+        </div>
+    `;
+}
+
+// Obtenir le label depuis la valeur
+function getLabel(value) {
+    const labels = {
+        'fenetre-1-vantail': 'Fenêtre 1 vantail',
+        'fenetre-2-vantaux': 'Fenêtre 2 vantaux',
+        'porte-1-vantail': 'Porte 1 vantail',
+        'porte-2-vantaux': 'Porte 2 vantaux',
+        'coulissant': 'Coulissant',
+        'oscillo-battant': 'Oscillo-battant',
+        'chassis-fixe': 'Châssis fixe',
+        'autre': 'Autre',
+        'applique': 'Applique',
+        'tunnel': 'Tunnel',
+        'feuillure': 'Feuillure',
+        'renovation': 'Rénovation',
+        'pvc': 'PVC',
+        'aluminium': 'Aluminium',
+        'bois': 'Bois',
+        'bois-alu': 'Bois-Aluminium',
+        'simple': 'Simple',
+        'double': 'Double',
+        'triple': 'Triple'
+    };
+    return labels[value] || value;
+}
+
+// Générer le PDF
+function generatePDF(data) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    
+    const schema = schémas[data.menuiserieType] || schémas['autre'];
+    const prixTotal = (data.prixUnitaire * data.quantite) * (1 - data.remise / 100);
+    
+    let yPosition = 10;
+    const pageHeight = doc.internal.pageSize.height;
+    const margin = 10;
+    const maxWidth = 190;
+    
+    // HEADER
+    doc.setFontSize(16);
+    doc.text('Devis de Cotation Menuiserie', margin, yPosition);
+    yPosition += 8;
+    
     doc.setFontSize(10);
-    doc.setTextColor(40, 40, 40);
-
-    const col1x = marge + 4;
-    const col2x = marge + 90;
-    let ligneY = y + 14;
-
-    doc.text(`Largeur : ${data.largeur || '-'} mm`, col1x, ligneY);
-    doc.text(`Hauteur : ${data.hauteur || '-'} mm`, col2x, ligneY);
-    ligneY += 6;
-
-    doc.text(`Cote bâti : ${data.coteBati || '-'} mm`, col1x, ligneY);
-    doc.text(`Vitrage : ${data.typeVitrage}`, col2x, ligneY);
-    ligneY += 6;
-
-    doc.text(`Réf. panneau : ${data.referencePanneau || '-'}`, col1x, ligneY);
-    doc.text(`Teinte ext/int : ${data.teinteExterieur || '-'} / ${data.teinteInterieur || '-'}`, col2x, ligneY);
-    ligneY += 6;
-
-    if (data.remarques) {
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Remarques : ${data.remarques}`, col1x, ligneY, { maxWidth: 180 });
+    doc.text(`Date d'édition : ${data.dateEdition}`, margin, yPosition);
+    yPosition += 5;
+    doc.text(`Validité : jusqu'au ${data.dateValidite}`, margin, yPosition);
+    yPosition += 10;
+    
+    // CLIENT
+    doc.setFontSize(12);
+    doc.text('CLIENT', margin, yPosition);
+    yPosition += 5;
+    doc.setFontSize(10);
+    doc.text(`Nom : ${data.clientName}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Email : ${data.clientEmail}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Téléphone : ${data.clientPhone || 'N/A'}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Adresse : ${data.clientAddress || 'N/A'}`, margin, yPosition);
+    yPosition += 10;
+    
+    // SPÉCIFICATIONS
+    doc.setFontSize(12);
+    doc.text('SPÉCIFICATIONS', margin, yPosition);
+    yPosition += 5;
+    doc.setFontSize(10);
+    doc.text(`Type : ${getLabel(data.menuiserieType)}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Pose : ${getLabel(data.typeDepose)}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Dimensions : ${data.largeur} mm × ${data.hauteur} mm`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Matériau : ${getLabel(data.materiau)}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Vitrage : ${getLabel(data.vitrage)}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Couleur : ${data.couleur || 'N/A'}`, margin, yPosition);
+    yPosition += 6;
+    
+    if (data.observation) {
+        doc.text(`Observations : ${data.observation}`, margin, yPosition);
+        yPosition += 6;
     }
-
-    y += 52;
-  });
-
-  doc.save(`rapport-cotes-${nomClient.replace(/\s+/g, '-')}.pdf`);
+    
+    // Vérifier si on a besoin d'une nouvelle page avant la tarification
+    if (yPosition > pageHeight - 50) {
+        doc.addPage();
+        yPosition = 10;
+    }
+    
+    // TARIFICATION
+    doc.setFontSize(12);
+    doc.text('TARIFICATION', margin, yPosition);
+    yPosition += 8;
+    
+    doc.setFontSize(10);
+    doc.text(`Prix unitaire : ${data.prixUnitaire.toFixed(2)} €`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Quantité : ${data.quantite}`, margin, yPosition);
+    yPosition += 4;
+    doc.text(`Sous-total : ${(data.prixUnitaire * data.quantite).toFixed(2)} €`, margin, yPosition);
+    yPosition += 4;
+    
+    if (data.remise > 0) {
+        doc.text(`Remise (${data.remise}%) : -${((data.prixUnitaire * data.quantite * data.remise) / 100).toFixed(2)} €`, margin, yPosition);
+        yPosition += 4;
+    }
+    
+    doc.setFontSize(12);
+    doc.text(`TOTAL TTC : ${prixTotal.toFixed(2)} €`, margin, yPosition);
+    yPosition += 6;
+    
+    doc.setFontSize(10);
+    doc.text(`Délai de livraison : ${data.delai} jours`, margin, yPosition);
+    yPosition += 10;
+    
+    // FOOTER
+    doc.setFontSize(9);
+    doc.text(`Devis établi le ${data.dateEdition} - Merci de votre confiance !`, margin, pageHeight - 10);
+    
+    // Générer le PDF
+    doc.save(`devis_${data.clientName.replace(/\s+/g, '_')}_${data.dateEdition.replace(/\//g, '-')}.pdf`);
 }
-
-document.getElementById('ajouterRepere').addEventListener('click', ajouterRepere);
-document.getElementById('genererPdf').addEventListener('click', genererPdf);
-
-// Ajouter un premier repère par défaut au chargement
-ajouterRepere();
