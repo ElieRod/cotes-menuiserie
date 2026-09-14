@@ -3,71 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotes Menuiserie - Générateur de Rapports</title>
+    <title>Cotation Menuiserie</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>📐 Générateur de Cotes Menuiserie</h1>
-            <p>Créer des rapports professionnels de menuiseries avec schémas 2D</p>
-        </header>
+        <h1>📐 Génération de Rapport de Cotation</h1>
+        
+        <form id="cotationForm">
+            <!-- CLIENT -->
+            <fieldset>
+                <legend>👤 Informations Client</legend>
+                <input type="text" id="clientName" placeholder="Nom du client" required>
+                <input type="email" id="clientEmail" placeholder="Email" required>
+                <input type="tel" id="clientPhone" placeholder="Téléphone">
+                <input type="text" id="clientAddress" placeholder="Adresse">
+            </fieldset>
 
-        <main>
-            <div class="form-section">
-                <h2>📋 Informations du Chantier</h2>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="clientName">Nom du Client :</label>
-                        <input type="text" id="clientName" placeholder="Ex: Mr. De Carrion" value="Mr. De Carrion">
-                    </div>
+            <!-- MENUISERIE -->
+            <fieldset>
+                <legend>🪟 Menuiserie</legend>
+                <select id="menuiserieType" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="fenetre-1-vantail">Fenêtre 1 vantail</option>
+                    <option value="fenetre-2-vantaux">Fenêtre 2 vantaux</option>
+                    <option value="porte-1-vantail">Porte 1 vantail</option>
+                    <option value="porte-2-vantaux">Porte 2 vantaux</option>
+                    <option value="coulissant">Coulissant</option>
+                    <option value="oscillo-battant">Oscillo-battant</option>
+                    <option value="chassis-fixe">Châssis fixe</option>
+                    <option value="autre">Autre</option>
+                </select>
 
-                    <div class="form-group">
-                        <label for="reference">Référence :</label>
-                        <input type="text" id="reference" placeholder="Ex: REF DE CARRION">
-                    </div>
-                </div>
+                <label for="typeDepose">Type de Pose :</label>
+                <select id="typeDepose" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="applique">Applique</option>
+                    <option value="tunnel">Tunnel</option>
+                    <option value="feuillure">Feuillure</option>
+                    <option value="renovation">Rénovation</option>
+                </select>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="date">Date :</label>
-                        <input type="date" id="date">
-                    </div>
+                <label for="largeur">Largeur (mm) :</label>
+                <input type="number" id="largeur" placeholder="ex: 1200" required>
 
-                    <div class="form-group">
-                        <label for="bicoloration">Bicoloration PVC :</label>
-                        <input type="text" id="bicoloration" placeholder="Ex: GRIS ANTHRACITE (7016) ext. / Blanc int.">
-                    </div>
-                </div>
+                <label for="hauteur">Hauteur (mm) :</label>
+                <input type="number" id="hauteur" placeholder="ex: 1500" required>
 
-                <hr>
+                <label for="materiau">Matériau :</label>
+                <select id="materiau" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="pvc">PVC</option>
+                    <option value="aluminium">Aluminium</option>
+                    <option value="bois">Bois</option>
+                    <option value="bois-alu">Bois-Aluminium</option>
+                </select>
 
-                <h2>📌 Repères et Dimensions</h2>
-                
-                <div id="reperesToabs" class="reperes-container">
-                    <!-- Les repères seront ajoutés dynamiquement -->
-                </div>
+                <label for="vitrage">Vitrage :</label>
+                <select id="vitrage" required>
+                    <option value="">-- Sélectionner --</option>
+                    <option value="simple">Simple</option>
+                    <option value="double">Double</option>
+                    <option value="triple">Triple</option>
+                </select>
 
-                <button id="addRepereBtn" class="btn btn-secondary">+ Ajouter un Repère</button>
+                <label for="couleur">Couleur :</label>
+                <input type="text" id="couleur" placeholder="ex: Blanc, Gris anthracite">
 
-                <hr>
+                <label for="observation">Observations :</label>
+                <textarea id="observation" placeholder="Notes supplémentaires..."></textarea>
+            </fieldset>
 
-                <h2>⚙️ Actions</h2>
-                <button id="previewBtn" class="btn btn-primary">👁️ Aperçu Schéma</button>
-                <button id="generatePdfBtn" class="btn btn-success">📄 Générer PDF</button>
+            <!-- PRIX & DEVIS -->
+            <fieldset>
+                <legend>💰 Tarification</legend>
+                <label for="prixUnitaire">Prix unitaire (€) :</label>
+                <input type="number" id="prixUnitaire" placeholder="0.00" step="0.01" required>
+
+                <label for="quantite">Quantité :</label>
+                <input type="number" id="quantite" placeholder="1" value="1" required>
+
+                <label for="remise">Remise (%) :</label>
+                <input type="number" id="remise" placeholder="0" value="0" step="0.01">
+
+                <label for="delai">Délai de livraison (jours) :</label>
+                <input type="number" id="delai" placeholder="14" value="14">
+            </fieldset>
+
+            <!-- ACTIONS -->
+            <div class="button-group">
+                <button type="button" id="previewBtn" class="btn-secondary">👁️ Aperçu</button>
+                <button type="button" id="generateBtn" class="btn-primary">📄 Générer PDF</button>
+                <button type="reset" class="btn-secondary">🔄 Réinitialiser</button>
             </div>
+        </form>
 
-            <div id="previewSection" class="preview-section" style="display:none;">
-                <h2>Aperçu du Schéma</h2>
-                <button id="closePreviewBtn" class="btn btn-secondary" style="margin-bottom: 15px;">✕ Fermer</button>
-                <div id="schemaContainer"></div>
-            </div>
-        </main>
+        <!-- APERÇU -->
+        <div id="preview" class="preview-hidden">
+            <h2>Aperçu du Rapport</h2>
+            <div id="previewContent"></div>
+            <button id="closePreview" class="btn-secondary">Fermer</button>
+        </div>
     </div>
 
-    <!-- Bibliothèques pour PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="script.js"></script>
+    <script src="schemas.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
