@@ -1,419 +1,437 @@
-// État global de l'application
-let reperes = [];
-let repereCounter = 1;
+// Récupérer tous les éléments du formulaire
+const form = document.getElementById('cotationForm');
+const clientNameInput = document.getElementById('clientName');
+const clientEmailInput = document.getElementById('clientEmail');
+const clientPhoneInput = document.getElementById('clientPhone');
+const clientAddressInput = document.getElementById('clientAddress');
+const menuiserieTypeSelect = document.getElementById('menuiserieType');
+const poseTypeSelect = document.getElementById('poseType');
+const largeurInput = document.getElementById('largeur');
+const hauteurInput = document.getElementById('hauteur');
+const materiauSelect = document.getElementById('materiau');
+const vitrageSelect = document.getElementById('vitrage');
+const couleurInput = document.getElementById('couleur');
+const observationsInput = document.getElementById('observations');
+const prixUnitaireInput = document.getElementById('prixUnitaire');
+const quantiteInput = document.getElementById('quantite');
+const generatePdfBtn = document.getElementById('generatePdfBtn');
+const previewSection = document.getElementById('previewSection');
+const schemaContainer = document.getElementById('schemaContainer');
 
-// Types de vitrages disponibles
-const VITRAGE_TYPES = [
-    'Vitrage dépoli',
-    'Vitrage fixe sécurité',
-    'Vitrage fixe',
-    'Plein',
-    'Double vitrage',
-    'Triple vitrage',
-    'Autre'
-];
-
-// Types de menuiseries
-const MENUISERIE_TYPES = [
-    'Fenêtre 1 vantail',
-    'Fenêtre 2 vantaux',
-    'Fenêtre 3 vantaux',
-    'Porte-fenêtre 1 vantail',
-    'Porte-fenêtre 2 vantaux',
-    'Châssis fixe',
-    'Coulissant',
-    'Autre'
-];
-
-// Initialisation
+// Initialiser l'app au chargement
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('date').valueAsDate = new Date();
-    
-    document.getElementById('addRepereBtn').addEventListener('click', addRepere);
-    document.getElementById('previewBtn').addEventListener('click', generatePreview);
-    document.getElementById('generatePdfBtn').addEventListener('click', generatePDF);
-    document.getElementById('closePreviewBtn').addEventListener('click', closePreview);
-    
-    // Ajouter 1 repère par défaut
-    addRepere();
+  // Vérifier que tous les éléments existent
+  if (!form || !generatePdfBtn) {
+    console.error('Éléments du formulaire manquants');
+    return;
+  }
+  
+  // Ajouter les écouteurs d'événements
+  generatePdfBtn.addEventListener('click', generateReport);
+  menuiserieTypeSelect?.addEventListener('change', updatePoseTypes);
+  
+  // Initialiser les options de pose
+  updatePoseTypes();
 });
 
-function addRepere() {
-    const repere = {
-        id: repereCounter++,
-        numero: reperes.length + 1,
-        type: 'Fenêtre 1 vantail',
-        largeur: '',
-        hauteur: '',
-        coteBati: '',
-        vitrage: 'Vitrage fixe',
-        reference: '',
-        notes: ''
-    };
-    
-    reperes.push(repere);
-    renderRepere(repere);
+// Mettre à jour les types de pose selon la menuiserie
+function updatePoseTypes() {
+  const menuiserieType = menuiserieTypeSelect?.value || '';
+  const poseTypes = {
+    'fenetre': ['Applique', 'Tunnel', 'Feuillure', 'Rénovation'],
+    'porte': ['Applique', 'Tunnel', 'Feuillure'],
+    'baie-vitrée': ['Applique', 'Tunnel', 'Rénovation'],
+    'velux': ['Applique', 'Tunnel'],
+    'autre': ['Applique', 'Tunnel', 'Feuillure', 'Rénovation']
+  };
+  
+  const options = poseTypes[menuiserieType] || poseTypes['autre'];
+  poseTypeSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+  options.forEach(option => {
+    const opt = document.createElement('option');
+    opt.value = option.toLowerCase();
+    opt.textContent = option;
+    poseTypeSelect.appendChild(opt);
+  });
 }
 
-function renderRepere(repere) {
-    const container = document.getElementById('reperesToabs');
-    
-    const card = document.createElement('div');
-    card.className = 'repere-card';
-    card.id = `repere-${repere.id}`;
-    
-    card.innerHTML = `
-        <div class="repere-header">
-            <h3>Repère ${repere.numero}</h3>
-            <button class="btn-remove" onclick="removeRepere(${repere.id})">Supprimer</button>
-        </div>
-        
-        <div class="repere-fields">
-            <div class="form-group">
-                <label>Type de menuiserie :</label>
-                <select onchange="updateRepere(${repere.id}, 'type', this.value)">
-                    ${MENUISERIE_TYPES.map(t => `<option value="${t}" ${t === repere.type ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Largeur (mm) :</label>
-                <input type="number" placeholder="Ex: 1500" value="${repere.largeur}" onchange="updateRepere(${repere.id}, 'largeur', this.value)">
-            </div>
-            
-            <div class="form-group">
-                <label>Hauteur (mm) :</label>
-                <input type="number" placeholder="Ex: 1200" value="${repere.hauteur}" onchange="updateRepere(${repere.id}, 'hauteur', this.value)">
-            </div>
-            
-            <div class="form-group">
-                <label>Cote Bâti (mm) :</label>
-                <input type="number" placeholder="Ex: 1180" value="${repere.coteBati}" onchange="updateRepere(${repere.id}, 'coteBati', this.value)">
-            </div>
-            
-            <div class="form-group">
-                <label>Type de vitrage :</label>
-                <select onchange="updateRepere(${repere.id}, 'vitrage', this.value)">
-                    ${VITRAGE_TYPES.map(v => `<option value="${v}" ${v === repere.vitrage ? 'selected' : ''}>${v}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Référence panneau :</label>
-                <input type="text" placeholder="Ex: SASHA 1" value="${repere.reference}" onchange="updateRepere(${repere.id}, 'reference', this.value)">
-            </div>
-            
-            <div class="form-group" style="grid-column: 1 / -1;">
-                <label>Notes :</label>
-                <input type="text" placeholder="Infos supplémentaires" value="${repere.notes}" onchange="updateRepere(${repere.id}, 'notes', this.value)">
-            </div>
-        </div>
+// Construire l'élément du rapport
+function buildReportElement() {
+  const clientName = clientNameInput?.value || 'Client';
+  const clientEmail = clientEmailInput?.value || '';
+  const clientPhone = clientPhoneInput?.value || '';
+  const clientAddress = clientAddressInput?.value || '';
+  const menuiserieType = menuiserieTypeSelect?.value || '';
+  const poseType = poseTypeSelect?.value || '';
+  const largeur = parseFloat(largeurInput?.value || 0);
+  const hauteur = parseFloat(hauteurInput?.value || 0);
+  const materiau = materiauSelect?.value || '';
+  const vitrage = vitrageSelect?.value || '';
+  const couleur = couleurInput?.value || '';
+  const observations = observationsInput?.value || '';
+  const prixUnitaire = parseFloat(prixUnitaireInput?.value || 0);
+  const quantite = parseFloat(quantiteInput?.value || 1);
+  const prixTotal = prixUnitaire * quantite;
+  
+  // Créer le conteneur du rapport
+  const reportDiv = document.createElement('div');
+  reportDiv.className = 'rapport-container';
+  reportDiv.style.cssText = `
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  `;
+  
+  // En-tête
+  const header = document.createElement('div');
+  header.style.cssText = `
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  `;
+  header.innerHTML = `
+    <h1 style="margin: 0 0 10px 0; color: #333;">Rapport de Cotation</h1>
+    <p style="margin: 5px 0; color: #666; font-size: 14px;">
+      Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}
+    </p>
+  `;
+  reportDiv.appendChild(header);
+  
+  // Section client
+  const clientSection = document.createElement('div');
+  clientSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 5px;
+  `;
+  clientSection.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-size: 16px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">
+      📋 Informations Client
+    </h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px; width: 25%; font-weight: bold; color: #555;">Nom :</td>
+        <td style="padding: 8px; color: #333;">${clientName}</td>
+        <td style="padding: 8px; width: 25%; font-weight: bold; color: #555;">Email :</td>
+        <td style="padding: 8px; color: #333;">${clientEmail}</td>
+      </tr>
+      <tr style="background: rgba(255,255,255,0.5);">
+        <td style="padding: 8px; font-weight: bold; color: #555;">Téléphone :</td>
+        <td style="padding: 8px; color: #333;">${clientPhone}</td>
+        <td style="padding: 8px; font-weight: bold; color: #555;">Adresse :</td>
+        <td style="padding: 8px; color: #333;">${clientAddress}</td>
+      </tr>
+    </table>
+  `;
+  reportDiv.appendChild(clientSection);
+  
+  // Section menuiserie
+  const menuiserieSection = document.createElement('div');
+  menuiserieSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 5px;
+  `;
+  menuiserieSection.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-size: 16px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">
+      🪟 Détails Menuiserie
+    </h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px; width: 25%; font-weight: bold; color: #555;">Type :</td>
+        <td style="padding: 8px; color: #333;">${menuiserieType.toUpperCase() || 'N/A'}</td>
+        <td style="padding: 8px; width: 25%; font-weight: bold; color: #555;">Type de Pose :</td>
+        <td style="padding: 8px; color: #333;">${poseType.toUpperCase() || 'N/A'}</td>
+      </tr>
+      <tr style="background: rgba(255,255,255,0.5);">
+        <td style="padding: 8px; font-weight: bold; color: #555;">Matériau :</td>
+        <td style="padding: 8px; color: #333;">${materiau || 'N/A'}</td>
+        <td style="padding: 8px; font-weight: bold; color: #555;">Vitrage :</td>
+        <td style="padding: 8px; color: #333;">${vitrage || 'N/A'}</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; font-weight: bold; color: #555;">Couleur :</td>
+        <td style="padding: 8px; color: #333;">${couleur || 'N/A'}</td>
+        <td style="padding: 8px; font-weight: bold; color: #555;"></td>
+        <td style="padding: 8px;"></td>
+      </tr>
+    </table>
+  `;
+  reportDiv.appendChild(menuiserieSection);
+  
+  // Section schéma et dimensions
+  const schemaSection = document.createElement('div');
+  schemaSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f5f7fa;
+    border-radius: 5px;
+  `;
+  
+  const schemaSvg = createSchemaDrawing(largeur, hauteur, poseType);
+  
+  schemaSection.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-size: 16px; border-bottom: 2px solid #667eea; padding-bottom: 8px;">
+      📐 Schéma et Dimensions
+    </h2>
+    <div style="text-align: center; margin: 15px 0;">
+      <p style="font-size: 18px; color: #667eea; font-weight: bold; margin: 5px 0;">
+        ${largeur} mm × ${hauteur} mm
+      </p>
+      <p style="color: #666; font-size: 12px; margin: 5px 0;">
+        Pose : ${poseType.toUpperCase() || 'N/A'}
+      </p>
+    </div>
+  `;
+  
+  // Ajouter le SVG au schéma
+  const svgContainer = document.createElement('div');
+  svgContainer.style.cssText = `
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    padding: 10px;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  `;
+  svgContainer.appendChild(schemaSvg);
+  schemaSection.appendChild(svgContainer);
+  
+  reportDiv.appendChild(schemaSection);
+  
+  // Section observations
+  if (observations) {
+    const obsSection = document.createElement('div');
+    obsSection.style.cssText = `
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #fffbea;
+      border-left: 4px solid #f59e0b;
+      border-radius: 5px;
     `;
-    
-    container.appendChild(card);
-}
-
-function updateRepere(id, field, value) {
-    const repere = reperes.find(r => r.id === id);
-    if (repere) {
-        repere[field] = value;
-    }
-}
-
-function removeRepere(id) {
-    reperes = reperes.filter(r => r.id !== id);
-    document.getElementById(`repere-${id}`).remove();
-    
-    // Renumeroter les repères
-    reperes.forEach((r, i) => {
-        r.numero = i + 1;
-    });
-}
-
-function generatePreview() {
-    const container = document.getElementById('schemaContainer');
-    container.innerHTML = '';
-    
-    // Créer un conteneur pour tous les schémas
-    const allSchemas = document.createElement('div');
-    allSchemas.style.width = '100%';
-    
-    reperes.forEach((repere, index) => {
-        const svg = createRepereSchema(repere);
-        
-        const schemaWrapper = document.createElement('div');
-        schemaWrapper.style.marginBottom = '30px';
-        schemaWrapper.style.pageBreakAfter = 'always';
-        schemaWrapper.innerHTML = `
-            <h3 style="text-align: center; margin-bottom: 15px; color: #2c3e50;">Repère ${repere.numero}</h3>
-        `;
-        schemaWrapper.appendChild(svg);
-        
-        // Ajouter les infos sous le schéma
-        const infos = document.createElement('div');
-        infos.style.marginTop = '15px';
-        infos.innerHTML = `
-            <p><strong>Type :</strong> ${repere.type}</p>
-            <p><strong>Vitrage :</strong> ${repere.vitrage}</p>
-            ${repere.reference ? `<p><strong>Référence :</strong> ${repere.reference}</p>` : ''}
-            ${repere.notes ? `<p><strong>Notes :</strong> ${repere.notes}</p>` : ''}
-        `;
-        schemaWrapper.appendChild(infos);
-        
-        allSchemas.appendChild(schemaWrapper);
-    });
-    
-    container.appendChild(allSchemas);
-    document.getElementById('previewSection').style.display = 'block';
-    document.getElementById('previewSection').scrollIntoView({ behavior: 'smooth' });
-}
-
-function createRepereSchema(repere) {
-    const width = 600;
-    const height = 500;
-    const padding = 80;
-    
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', width);
-    svg.setAttribute('height', height);
-    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    svg.style.maxWidth = '100%';
-    
-    // Fond blanc
-    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    bg.setAttribute('width', width);
-    bg.setAttribute('height', height);
-    bg.setAttribute('fill', 'white');
-    svg.appendChild(bg);
-    
-    const x1 = padding;
-    const y1 = padding;
-    const x2 = width - padding;
-    const y2 = height - padding;
-    
-    // Rectangle principal (menuiserie)
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', x1);
-    rect.setAttribute('y', y1);
-    rect.setAttribute('width', x2 - x1);
-    rect.setAttribute('height', y2 - y1);
-    rect.setAttribute('fill', '#e8f4f8');
-    rect.setAttribute('stroke', '#2c3e50');
-    rect.setAttribute('stroke-width', '2');
-    svg.appendChild(rect);
-    
-    // Numéro de repère au centre
-    const numeroText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    numeroText.setAttribute('x', (x1 + x2) / 2);
-    numeroText.setAttribute('y', (y1 + y2) / 2);
-    numeroText.setAttribute('text-anchor', 'middle');
-    numeroText.setAttribute('dominant-baseline', 'middle');
-    numeroText.setAttribute('font-size', '48');
-    numeroText.setAttribute('font-weight', 'bold');
-    numeroText.setAttribute('fill', '#3498db');
-    numeroText.setAttribute('opacity', '0.3');
-    numeroText.textContent = repere.numero;
-    svg.appendChild(numeroText);
-    
-    // Type de vitrage (pattern simple)
-    if (repere.vitrage.includes('dépoli')) {
-        drawHatchPattern(svg, x1 + 20, y1 + 20, x2 - x1 - 40, y2 - y1 - 40);
-    }
-    
-    // Dimensions - Largeur (bas)
-    if (repere.largeur) {
-        addDimension(svg, x1, y2 + 20, x2, y2 + 20, `L: ${repere.largeur} mm`, 'bottom');
-    }
-    
-    // Dimensions - Hauteur (droite)
-    if (repere.hauteur) {
-        addDimension(svg, x2 + 20, y1, x2 + 20, y2, `H: ${repere.hauteur} mm`, 'right');
-    }
-    
-    // Cote Bâti (gauche)
-    if (repere.coteBati) {
-        addDimension(svg, x1 - 20, y1, x1 - 20, y2, `CB: ${repere.coteBati} mm`, 'left');
-    }
-    
-    // Texte vitrage
-    const vitrageText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    vitrageText.setAttribute('x', (x1 + x2) / 2);
-    vitrageText.setAttribute('y', height - 30);
-    vitrageText.setAttribute('text-anchor', 'middle');
-    vitrageText.setAttribute('font-size', '12');
-    vitrageText.setAttribute('fill', '#2c3e50');
-    vitrageText.setAttribute('font-weight', 'bold');
-    vitrageText.textContent = repere.vitrage;
-    svg.appendChild(vitrageText);
-    
-    return svg;
-}
-
-function drawHatchPattern(svg, x, y, width, height) {
-    // Pattern de hachures pour vitrage dépoli
-    for (let i = 0; i < width; i += 8) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', x + i);
-        line.setAttribute('y1', y);
-        line.setAttribute('x2', x + i);
-        line.setAttribute('y2', y + height);
-        line.setAttribute('stroke', '#bdc3c7');
-        line.setAttribute('stroke-width', '1');
-        svg.appendChild(line);
-    }
-}
-
-function addDimension(svg, x1, y1, x2, y2, text, position) {
-    // Ligne de cote
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1);
-    line.setAttribute('y1', y1);
-    line.setAttribute('x2', x2);
-    line.setAttribute('y2', y2);
-    line.setAttribute('stroke', '#2c3e50');
-    line.setAttribute('stroke-width', '1');
-    svg.appendChild(line);
-    
-    // Texte dimension
-    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    textEl.setAttribute('font-size', '11');
-    textEl.setAttribute('fill', '#2c3e50');
-    textEl.setAttribute('font-weight', 'bold');
-    
-    if (position === 'bottom') {
-        textEl.setAttribute('x', (x1 + x2) / 2);
-        textEl.setAttribute('y', y1 + 15);
-        textEl.setAttribute('text-anchor', 'middle');
-    } else if (position === 'right') {
-        textEl.setAttribute('x', x1 + 8);
-        textEl.setAttribute('y', (y1 + y2) / 2);
-        textEl.setAttribute('dominant-baseline', 'middle');
-    } else if (position === 'left') {
-        textEl.setAttribute('x', x1 - 8);
-        textEl.setAttribute('y', (y1 + y2) / 2);
-        textEl.setAttribute('text-anchor', 'end');
-        textEl.setAttribute('dominant-baseline', 'middle');
-    }
-    
-    textEl.textContent = text;
-    svg.appendChild(textEl);
-}
-
-function generatePDF() {
-    const clientName = document.getElementById('clientName').value;
-    const reference = document.getElementById('reference').value;
-    const date = document.getElementById('date').value;
-    const bicoloration = document.getElementById('bicoloration').value;
-    
-    if (reperes.length === 0 || !reperes.some(r => r.largeur || r.hauteur)) {
-        alert('Veuillez ajouter au moins un repère avec des dimensions.');
-        return;
-    }
-    
-    // Créer le document PDF
-    const element = document.createElement('div');
-    element.style.padding = '20px';
-    element.style.fontFamily = 'Arial, sans-serif';
-    element.style.fontSize = '12px';
-    
-    // Entête
-    const header = document.createElement('div');
-    header.style.textAlign = 'center';
-    header.style.marginBottom = '30px';
-    header.style.borderBottom = '2px solid #333';
-    header.style.paddingBottom = '20px';
-    header.innerHTML = `
-        <h1 style="margin: 0; color: #2c3e50;">RAPPORT DE COTES MENUISERIE</h1>
-        <p style="margin: 10px 0 0 0; color: #7f8c8d;">${new Date().toLocaleDateString('fr-FR')}</p>
+    obsSection.innerHTML = `
+      <h2 style="margin-top: 0; color: #333; font-size: 16px;">📝 Observations</h2>
+      <p style="margin: 0; color: #555; white-space: pre-wrap;">${observations}</p>
     `;
-    element.appendChild(header);
+    reportDiv.appendChild(obsSection);
+  }
+  
+  // Section tarification
+  const pricingSection = document.createElement('div');
+  pricingSection.style.cssText = `
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    border-radius: 5px;
+  `;
+  pricingSection.innerHTML = `
+    <h2 style="margin-top: 0; color: #333; font-size: 16px;">💰 Tarification</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 8px; font-weight: bold; color: #555;">Prix Unitaire :</td>
+        <td style="padding: 8px; text-align: right; color: #333;">${prixUnitaire.toFixed(2)} €</td>
+      </tr>
+      <tr style="background: rgba(255,255,255,0.5);">
+        <td style="padding: 8px; font-weight: bold; color: #555;">Quantité :</td>
+        <td style="padding: 8px; text-align: right; color: #333;">${quantite}</td>
+      </tr>
+      <tr style="background: #dcfce7; border-top: 2px solid #10b981;">
+        <td style="padding: 12px; font-weight: bold; color: #059669; font-size: 16px;">TOTAL :</td>
+        <td style="padding: 12px; text-align: right; color: #059669; font-weight: bold; font-size: 16px;">${prixTotal.toFixed(2)} €</td>
+      </tr>
+    </table>
+  `;
+  reportDiv.appendChild(pricingSection);
+  
+  // Pied de page
+  const footer = document.createElement('div');
+  footer.style.cssText = `
+    border-top: 2px solid #e5e7eb;
+    padding-top: 15px;
+    margin-top: 20px;
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+  `;
+  footer.innerHTML = `
+    <p style="margin: 5px 0;">Cet rapport a été généré automatiquement par l'application Cotation Menuiserie</p>
+  `;
+  reportDiv.appendChild(footer);
+  
+  return reportDiv;
+}
+
+// Créer le schéma SVG
+function createSchemaDrawing(largeur, hauteur, poseType) {
+  const svgWidth = 400;
+  const svgHeight = 300;
+  const scale = Math.min(
+    (svgWidth - 40) / Math.max(largeur, 1),
+    (svgHeight - 40) / Math.max(hauteur, 1)
+  );
+  const rectWidth = Math.max(largeur * scale, 50);
+  const rectHeight = Math.max(hauteur * scale, 50);
+  const offsetX = (svgWidth - rectWidth) / 2;
+  const offsetY = (svgHeight - rectHeight) / 2;
+  
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', svgWidth);
+  svg.setAttribute('height', svgHeight);
+  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+  svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  svg.setAttribute('style', 'border: 1px solid #ddd; background: #fafafa;');
+  
+  // Grille de fond
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  pattern.setAttribute('id', 'grid');
+  pattern.setAttribute('width', '20');
+  pattern.setAttribute('height', '20');
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+  
+  const pathGrid = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  pathGrid.setAttribute('d', 'M 20 0 L 0 0 0 20');
+  pathGrid.setAttribute('fill', 'none');
+  pathGrid.setAttribute('stroke', '#e5e7eb');
+  pathGrid.setAttribute('stroke-width', '0.5');
+  pattern.appendChild(pathGrid);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+  
+  // Arrière-plan avec grille
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  bgRect.setAttribute('width', svgWidth);
+  bgRect.setAttribute('height', svgHeight);
+  bgRect.setAttribute('fill', 'url(#grid)');
+  svg.appendChild(bgRect);
+  
+  // Rectangle principal
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', offsetX);
+  rect.setAttribute('y', offsetY);
+  rect.setAttribute('width', rectWidth);
+  rect.setAttribute('height', rectHeight);
+  rect.setAttribute('fill', '#667eea');
+  rect.setAttribute('stroke', '#4c51bf');
+  rect.setAttribute('stroke-width', '2');
+  rect.setAttribute('opacity', '0.7');
+  svg.appendChild(rect);
+  
+  // Ajouter les cotations
+  const dimensionTextX = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  dimensionTextX.setAttribute('x', offsetX + rectWidth / 2);
+  dimensionTextX.setAttribute('y', offsetY + rectHeight + 25);
+  dimensionTextX.setAttribute('text-anchor', 'middle');
+  dimensionTextX.setAttribute('font-size', '14');
+  dimensionTextX.setAttribute('font-weight', 'bold');
+  dimensionTextX.setAttribute('fill', '#333');
+  dimensionTextX.textContent = `${largeur}mm`;
+  svg.appendChild(dimensionTextX);
+  
+  const dimensionTextY = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  dimensionTextY.setAttribute('x', offsetX - 20);
+  dimensionTextY.setAttribute('y', offsetY + rectHeight / 2);
+  dimensionTextY.setAttribute('text-anchor', 'end');
+  dimensionTextY.setAttribute('font-size', '14');
+  dimensionTextY.setAttribute('font-weight', 'bold');
+  dimensionTextY.setAttribute('fill', '#333');
+  dimensionTextY.setAttribute('transform', `rotate(-90, ${offsetX - 20}, ${offsetY + rectHeight / 2})`);
+  dimensionTextY.textContent = `${hauteur}mm`;
+  svg.appendChild(dimensionTextY);
+  
+  // Type de pose
+  const poseText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  poseText.setAttribute('x', svgWidth / 2);
+  poseText.setAttribute('y', 20);
+  poseText.setAttribute('text-anchor', 'middle');
+  poseText.setAttribute('font-size', '12');
+  poseText.setAttribute('fill', '#666');
+  poseText.textContent = `Pose: ${poseType.toUpperCase() || 'N/A'}`;
+  svg.appendChild(poseText);
+  
+  return svg;
+}
+
+// Afficher l'aperçu
+function showReportPreview(element) {
+  if (!schemaContainer || !previewSection) {
+    console.warn('Conteneurs d\'aperçu manquants');
+    return;
+  }
+  
+  // Vider et insérer
+  schemaContainer.innerHTML = '';
+  schemaContainer.appendChild(element);
+  
+  // Afficher la section d'aperçu
+  previewSection.style.display = 'block';
+  
+  // Scroller vers l'aperçu
+  setTimeout(() => {
+    previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+// Générer le rapport (principal)
+function generateReport() {
+  try {
+    // Valider les champs obligatoires
+    if (!largeurInput?.value || !hauteurInput?.value) {
+      alert('⚠️ Veuillez remplir les dimensions (largeur et hauteur)');
+      return;
+    }
     
-    // Informations client
-    const infos = document.createElement('div');
-    infos.style.marginBottom = '30px';
-    infos.innerHTML = `
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td style="padding: 8px; width: 50%;"><strong>Client :</strong> ${clientName}</td>
-                <td style="padding: 8px; width: 50%;"><strong>Référence :</strong> ${reference}</td>
-            </tr>
-            <tr>
-                <td style="padding: 8px; width: 50%;"><strong>Date :</strong> ${date}</td>
-                <td style="padding: 8px; width: 50%;"><strong>Bicoloration :</strong> ${bicoloration}</td>
-            </tr>
-        </table>
-    `;
-    element.appendChild(infos);
+    // Construire le rapport
+    const reportElement = buildReportElement();
     
-    // Schémas
-    reperes.forEach((repere, index) => {
-        const page = document.createElement('div');
-        page.style.pageBreakAfter = 'always';
-        page.style.marginTop = index > 0 ? '40px' : '0';
-        
-        const title = document.createElement('h2');
-        title.style.color = '#2c3e50';
-        title.style.marginBottom = '20px';
-        title.textContent = `Repère ${repere.numero}`;
-        page.appendChild(title);
-        
-        // SVG du schéma
-        const svg = createRepereSchema(repere);
-        svg.setAttribute('style', 'max-width: 100%; margin-bottom: 20px;');
-        page.appendChild(svg);
-        
-        // Infos du repère
-        const repereInfos = document.createElement('div');
-        repereInfos.style.marginTop = '20px';
-        repereInfos.innerHTML = `
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <tr style="background: #ecf0f1;">
-                    <td style="padding: 8px; font-weight: bold;">Type</td>
-                    <td style="padding: 8px;">${repere.type}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Dimensions (mm)</td>
-                    <td style="padding: 8px;">L: ${repere.largeur || '-'} × H: ${repere.hauteur || '-'}</td>
-                </tr>
-                <tr style="background: #ecf0f1;">
-                    <td style="padding: 8px; font-weight: bold;">Cote Bâti</td>
-                    <td style="padding: 8px;">${repere.coteBati || '-'} mm</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Vitrage</td>
-                    <td style="padding: 8px;">${repere.vitrage}</td>
-                </tr>
-                ${repere.reference ? `
-                <tr style="background: #ecf0f1;">
-                    <td style="padding: 8px; font-weight: bold;">Référence</td>
-                    <td style="padding: 8px;">${repere.reference}</td>
-                </tr>
-                ` : ''}
-                ${repere.notes ? `
-                <tr>
-                    <td style="padding: 8px; font-weight: bold;">Notes</td>
-                    <td style="padding: 8px;">${repere.notes}</td>
-                </tr>
-                ` : ''}
-            </table>
-        `;
-        page.appendChild(repereInfos);
-        
-        element.appendChild(page);
-    });
+    // Afficher l'aperçu
+    showReportPreview(reportElement);
     
     // Générer le PDF
-    const opt = {
-        margin: 10,
-        filename: `cotes-menuiserie-${reference || 'rapport'}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-    };
+    generatePDF(reportElement);
     
-    html2pdf().set(opt).from(element).save();
+  } catch (error) {
+    console.error('Erreur lors de la génération du rapport:', error);
+    alert('❌ Erreur: ' + error.message);
+  }
 }
 
-function closePreview() {
-    document.getElementById('previewSection').style.display = 'none';
+// Générer et télécharger le PDF
+function generatePDF(reportElement) {
+  try {
+    // Vérifier que html2pdf est disponible
+    if (typeof html2pdf === 'undefined') {
+      console.warn('html2pdf non disponible, utilisation du fallback');
+      window.print();
+      return;
+    }
+    
+    const opt = {
+      margin: 10,
+      filename: `cotation_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        logging: false
+      },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    };
+    
+    html2pdf().set(opt).from(reportElement).save();
+    
+  } catch (error) {
+    console.error('Erreur PDF:', error);
+    // Fallback: ouvrir l'impression
+    window.print();
+  }
 }
+
+// Alias pour compatibilité
+window.generatePDF = generatePDF;
