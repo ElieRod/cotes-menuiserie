@@ -1,0 +1,23 @@
+<svg viewBox="0 0 300 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cadre extérieur -->
+  <rect x="50" y="50" width="200" height="400" fill="none" stroke="#333" stroke-width="3"/>
+  
+  <!-- Triangles aux 4 coins -->
+  <polygon points="50,50 80,50 50,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="250,50 220,50 250,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="50,450 50,420 80,450" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="250,450 250,420 220,450" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  
+  <!-- Verre principal -->
+  <rect x="80" y="80" width="140" height="340" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  
+  <!-- Croisillon central -->
+  <line x1="150" y1="80" x2="150" y2="420" stroke="#333" stroke-width="2"/>
+  <line x1="80" y1="250" x2="220" y2="250" stroke="#333" stroke-width="2"/>
+  
+  <!-- Poignée -->
+  <circle cx="210" cy="250" r="5" fill="#666"/>
+  
+  <!-- Dimensions -->
+  <text x="150" y="480" text-anchor="middle" font-size="14" fill="#333">Porte Simple</text>
+</svg>

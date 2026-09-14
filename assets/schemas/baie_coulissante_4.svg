@@ -1,0 +1,27 @@
+<svg viewBox="0 0 500 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cadre extérieur -->
+  <rect x="50" y="50" width="400" height="200" fill="none" stroke="#333" stroke-width="3"/>
+  
+  <!-- Triangles aux 4 coins -->
+  <polygon points="50,50 80,50 50,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="450,50 420,50 450,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="50,250 50,220 80,250" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="450,250 450,220 420,250" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  
+  <!-- Verres -->
+  <rect x="80" y="80" width="80" height="170" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  <rect x="165" y="80" width="80" height="170" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  <rect x="250" y="80" width="80" height="170" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  <rect x="335" y="80" width="85" height="170" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  
+  <!-- Montants -->
+  <line x1="160" y1="80" x2="160" y2="250" stroke="#333" stroke-width="2"/>
+  <line x1="245" y1="80" x2="245" y2="250" stroke="#333" stroke-width="2"/>
+  <line x1="330" y1="80" x2="330" y2="250" stroke="#333" stroke-width="2"/>
+  
+  <!-- Croisillon horizontal -->
+  <line x1="80" y1="165" x2="420" y2="165" stroke="#333" stroke-width="2"/>
+  
+  <!-- Dimensions -->
+  <text x="250" y="280" text-anchor="middle" font-size="14" fill="#333">Baie Coulissante 4 Vantaux</text>
+</svg>

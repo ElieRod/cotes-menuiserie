@@ -3,163 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotation Menuiserie</title>
+    <title>Cotation Menuiseries - Applique/Tunnel/Feuillure/Rénovation</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🪟 Cotation Menuiserie</h1>
-            <p>Générez vos rapports de cotation en un clic</p>
+            <h1>📋 Cotation Menuiseries</h1>
+            <p>Applique • Tunnel • Feuillure • Rénovation</p>
         </header>
 
-        <main>
-            <form id="cotationForm">
-                <!-- Section Informations Client -->
-                <fieldset>
-                    <legend>👤 Informations Client</legend>
-                    <div class="form-group">
-                        <label for="clientName">Nom du client *</label>
-                        <input type="text" id="clientName" placeholder="ex: Jean Dupont" required>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="clientEmail">Email</label>
-                            <input type="email" id="clientEmail" placeholder="ex: jean@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="clientPhone">Téléphone</label>
-                            <input type="tel" id="clientPhone" placeholder="ex: 06 12 34 56 78">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="clientAddress">Adresse</label>
-                        <input type="text" id="clientAddress" placeholder="ex: 123 rue de Paris, 75000 Paris">
-                    </div>
-                </fieldset>
-
-                <!-- Section Menuiserie -->
-                <fieldset>
-                    <legend>🪟 Menuiserie</legend>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="menuiserieType">Type de menuiserie *</label>
-                            <select id="menuiserieType" required>
-                                <option value="">-- Sélectionner --</option>
-                                <option value="fenetre">Fenêtre</option>
-                                <option value="porte">Porte</option>
-                                <option value="baie-vitrée">Baie vitrée</option>
-                                <option value="velux">Velux</option>
-                                <option value="autre">Autre</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="poseType">Type de pose *</label>
-                            <select id="poseType" required>
-                                <option value="">-- Sélectionner --</option>
-                            </select>
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Section Dimensions -->
-                <fieldset>
-                    <legend>📐 Dimensions (mm)</legend>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="largeur">Largeur (mm) *</label>
-                            <input type="number" id="largeur" placeholder="ex: 1200" min="1" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="hauteur">Hauteur (mm) *</label>
-                            <input type="number" id="hauteur" placeholder="ex: 1500" min="1" required>
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Section Caractéristiques -->
-                <fieldset>
-                    <legend>✨ Caractéristiques</legend>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="materiau">Matériau</label>
-                            <select id="materiau">
-                                <option value="">-- Sélectionner --</option>
-                                <option value="PVC">PVC</option>
-                                <option value="Aluminium">Aluminium</option>
-                                <option value="Bois">Bois</option>
-                                <option value="Composite">Composite</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="vitrage">Vitrage</label>
-                            <select id="vitrage">
-                                <option value="">-- Sélectionner --</option>
-                                <option value="Simple">Simple</option>
-                                <option value="Double">Double</option>
-                                <option value="Triple">Triple</option>
-                                <option value="Teinté">Teinté</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="couleur">Couleur</label>
-                            <input type="text" id="couleur" placeholder="ex: Blanc, Gris anthracite">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Section Observations -->
-                <fieldset>
-                    <legend>📝 Observations</legend>
-                    <div class="form-group">
-                        <textarea id="observations" placeholder="Notes supplémentaires..."></textarea>
-                    </div>
-                </fieldset>
-
-                <!-- Section Tarification -->
-                <fieldset>
-                    <legend>💰 Tarification</legend>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="prixUnitaire">Prix unitaire (€)</label>
-                            <input type="number" id="prixUnitaire" placeholder="0.00" min="0" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label for="quantite">Quantité</label>
-                            <input type="number" id="quantite" value="1" min="1">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- Bouton Générer -->
-                <div class="button-container">
-                    <button type="button" id="generatePdfBtn" class="btn btn-primary">
-                        📄 Générer le rapport
-                    </button>
+        <form id="cotationForm">
+            <!-- Section Client -->
+            <fieldset>
+                <legend>📋 Client & Références</legend>
+                <div class="form-group">
+                    <label for="client">Nom du client</label>
+                    <input type="text" id="client" name="client" required>
                 </div>
-            </form>
-
-            <!-- Section Aperçu -->
-            <section id="previewSection" class="preview-section" style="display: none;">
-                <h2>📋 Aperçu du rapport</h2>
-                <div id="schemaContainer" class="schema-container"></div>
-                <div class="preview-actions">
-                    <button type="button" onclick="window.print()" class="btn btn-secondary">
-                        🖨️ Imprimer
-                    </button>
+                <div class="form-group">
+                    <label for="reference">Référence chantier</label>
+                    <input type="text" id="reference" name="reference" required>
                 </div>
-            </section>
-        </main>
+                <div class="form-group">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+            </fieldset>
 
-        <footer>
-            <p>&copy; 2024 Cotation Menuiserie - Tous droits réservés</p>
-        </footer>
+            <!-- Section Menuiseries -->
+            <fieldset>
+                <legend>🪟 Menuiseries</legend>
+                <div id="menuiseriesContainer"></div>
+                <button type="button" id="addMenuiserie" class="btn-secondary">+ Ajouter une menuiserie</button>
+            </fieldset>
+
+            <!-- Boutons Actions -->
+            <div class="button-group">
+                <button type="button" id="generatePdf" class="btn-primary">📄 Générer PDF</button>
+                <button type="reset" class="btn-secondary">🔄 Réinitialiser</button>
+            </div>
+        </form>
     </div>
 
-    <!-- Bibliothèques externes -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="script.js"></script>
+    <script src="schemas.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

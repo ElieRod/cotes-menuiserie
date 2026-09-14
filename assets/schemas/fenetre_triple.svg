@@ -1,0 +1,27 @@
+<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cadre extérieur -->
+  <rect x="50" y="50" width="300" height="300" fill="none" stroke="#333" stroke-width="3"/>
+  
+  <!-- Triangles aux 4 coins -->
+  <polygon points="50,50 80,50 50,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="350,50 320,50 350,80" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="50,350 50,320 80,350" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="350,350 350,320 320,350" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  
+  <!-- Verre gauche -->
+  <rect x="80" y="80" width="75" height="240" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  <!-- Verre centre -->
+  <rect x="162" y="80" width="75" height="240" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  <!-- Verre droit -->
+  <rect x="244" y="80" width="76" height="240" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  
+  <!-- Montants verticaux -->
+  <line x1="155" y1="80" x2="155" y2="320" stroke="#333" stroke-width="2"/>
+  <line x1="237" y1="80" x2="237" y2="320" stroke="#333" stroke-width="2"/>
+  
+  <!-- Croisillon horizontal -->
+  <line x1="80" y1="200" x2="320" y2="200" stroke="#333" stroke-width="2"/>
+  
+  <!-- Dimensions -->
+  <text x="200" y="380" text-anchor="middle" font-size="14" fill="#333">Fenêtre Triple</text>
+</svg>

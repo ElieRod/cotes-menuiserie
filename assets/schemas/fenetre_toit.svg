@@ -1,0 +1,20 @@
+<svg viewBox="0 0 300 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cadre extérieur (incliné) -->
+  <path d="M 50 200 L 80 50 L 220 50 L 250 200 L 220 350 L 80 350 Z" fill="none" stroke="#333" stroke-width="3"/>
+  
+  <!-- Triangles aux 4 coins -->
+  <polygon points="80,50 100,50 85,70" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="220,50 200,50 215,70" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="80,350 80,330 100,350" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  <polygon points="220,350 220,330 200,350" fill="#FF8C00" stroke="#FF8C00" stroke-width="2"/>
+  
+  <!-- Verre principal -->
+  <path d="M 100 100 L 200 100 L 180 300 L 120 300 Z" fill="#E8F4F8" stroke="#0066cc" stroke-width="2"/>
+  
+  <!-- Croisillons -->
+  <line x1="150" y1="100" x2="150" y2="300" stroke="#333" stroke-width="2"/>
+  <line x1="100" y1="200" x2="200" y2="200" stroke="#333" stroke-width="2"/>
+  
+  <!-- Dimensions -->
+  <text x="150" y="380" text-anchor="middle" font-size="14" fill="#333">Fenêtre de Toit</text>
+</svg>

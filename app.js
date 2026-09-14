@@ -1,279 +1,313 @@
+// ====================================
+// COTATION MENUISERIES - APP.JS
+// ====================================
+
 // Import des schémas
-const schémas = getSchemas();
+const SCHEMAS = DISPONIBLE_SCHEMAS;
 
-// Récupérer les éléments du DOM
-const form = document.getElementById('cotationForm');
-const previewBtn = document.getElementById('previewBtn');
-const generateBtn = document.getElementById('generateBtn');
-const previewDiv = document.getElementById('preview');
-const previewContent = document.getElementById('previewContent');
-const closePreviewBtn = document.getElementById('closePreview');
+// État de l'application
+let menuiseries = [];
+let menuiserieCounter = 0;
 
-// Afficher l'aperçu
-previewBtn.addEventListener('click', () => {
-    const formData = getFormData();
-    
-    if (!validateForm(formData)) {
-        alert('⚠️ Veuillez remplir tous les champs obligatoires !');
-        return;
-    }
+// ====================================
+// FONCTIONS UTILITAIRES
+// ====================================
 
-    previewContent.innerHTML = generatePreviewHTML(formData);
-    previewDiv.classList.remove('preview-hidden');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
+function generateId() {
+    return `menuiserie_${++menuiserieCounter}`;
+}
 
-// Fermer l'aperçu
-closePreviewBtn.addEventListener('click', () => {
-    previewDiv.classList.add('preview-hidden');
-});
-
-// Générer le PDF
-generateBtn.addEventListener('click', () => {
-    const formData = getFormData();
-    
-    if (!validateForm(formData)) {
-        alert('⚠️ Veuillez remplir tous les champs obligatoires !');
-        return;
-    }
-
-    generatePDF(formData);
-});
-
-// Récupérer les données du formulaire
-function getFormData() {
+function getCotationData() {
     return {
-        clientName: document.getElementById('clientName').value,
-        clientEmail: document.getElementById('clientEmail').value,
-        clientPhone: document.getElementById('clientPhone').value,
-        clientAddress: document.getElementById('clientAddress').value,
-        menuiserieType: document.getElementById('menuiserieType').value,
-        typeDepose: document.getElementById('typeDepose').value,
-        largeur: document.getElementById('largeur').value,
-        hauteur: document.getElementById('hauteur').value,
-        materiau: document.getElementById('materiau').value,
-        vitrage: document.getElementById('vitrage').value,
-        couleur: document.getElementById('couleur').value,
-        observation: document.getElementById('observation').value,
-        prixUnitaire: parseFloat(document.getElementById('prixUnitaire').value) || 0,
-        quantite: parseInt(document.getElementById('quantite').value) || 1,
-        remise: parseFloat(document.getElementById('remise').value) || 0,
-        delai: document.getElementById('delai').value,
-        dateEdition: new Date().toLocaleDateString('fr-FR'),
-        dateValidite: new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('fr-FR')
+        client: document.getElementById('client').value,
+        reference: document.getElementById('reference').value,
+        date: document.getElementById('date').value
     };
 }
 
-// Valider le formulaire
-function validateForm(data) {
-    return data.clientName && 
-           data.menuiserieType && 
-           data.typeDepose &&
-           data.largeur && 
-           data.hauteur && 
-           data.materiau && 
-           data.vitrage && 
-           data.prixUnitaire > 0;
+function getMenuiserieData(id) {
+    const elem = document.getElementById(id);
+    return {
+        id,
+        bicoloration: elem.querySelector(`[data-field="bicoloration_${id}"]`).value,
+        pose: elem.querySelector(`[data-field="pose_${id}"]`).value,
+        ouvertures: getOuverturesData(id)
+    };
 }
 
-// Générer l'aperçu HTML
-function generatePreviewHTML(data) {
-    const schema = schémas[data.menuiserieType] || schémas['autre'];
-    const prixTotal = (data.prixUnitaire * data.quantite) * (1 - data.remise / 100);
+function getOuverturesData(menuiserieId) {
+    const ouvertures = [];
+    const container = document.querySelector(`[data-menuiserie="${menuiserieId}"] .ouvertures-container`);
+    
+    if (!container) return ouvertures;
 
-    return `
-        <div class="report">
-            <header class="report-header">
-                <h2>Devis de Cotation Menuiserie</h2>
-                <p><strong>Date d'édition :</strong> ${data.dateEdition}</p>
-                <p><strong>Validité :</strong> jusqu'au ${data.dateValidite}</p>
-            </header>
+    container.querySelectorAll('.ouverture-item').forEach((item, index) => {
+        const typeSelect = item.querySelector(`[data-field="type_${menuiserieId}_${index}"]`);
+        const largeursInput = item.querySelector(`[data-field="largeurs_${menuiserieId}_${index}"]`);
+        const hauteursInput = item.querySelector(`[data-field="hauteurs_${menuiserieId}_${index}"]`);
+        const schemaSelect = item.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
+        
+        if (typeSelect && largeursInput && hauteursInput && schemaSelect) {
+            ouvertures.push({
+                type: typeSelect.value,
+                largeurs: largeursInput.value.split(',').map(v => v.trim()).filter(v => v),
+                hauteurs: hauteursInput.value.split(',').map(v => v.trim()).filter(v => v),
+                schema: schemaSelect.value
+            });
+        }
+    });
 
-            <section class="section">
-                <h3>👤 Client</h3>
-                <p><strong>Nom :</strong> ${data.clientName}</p>
-                <p><strong>Email :</strong> ${data.clientEmail}</p>
-                <p><strong>Téléphone :</strong> ${data.clientPhone || 'N/A'}</p>
-                <p><strong>Adresse :</strong> ${data.clientAddress || 'N/A'}</p>
-            </section>
+    return ouvertures;
+}
 
-            <section class="section">
-                <h3>📋 Spécifications</h3>
-                <p><strong>Type de menuiserie :</strong> ${getLabel(data.menuiserieType)}</p>
-                <p><strong>Type de pose :</strong> ${getLabel(data.typeDepose)}</p>
-                <p><strong>Dimensions :</strong> ${data.largeur} mm × ${data.hauteur} mm</p>
-                <p><strong>Matériau :</strong> ${getLabel(data.materiau)}</p>
-                <p><strong>Vitrage :</strong> ${getLabel(data.vitrage)}</p>
-                <p><strong>Couleur :</strong> ${data.couleur || 'N/A'}</p>
-                ${data.observation ? `<p><strong>Observations :</strong> ${data.observation}</p>` : ''}
-            </section>
+// ====================================
+// GESTION MENUISERIES
+// ====================================
 
-            <section class="section">
-                <h3>🖼️ Schéma</h3>
-                <div class="schema-container">
-                    ${schema}
-                </div>
-            </section>
+function addMenuiserie() {
+    const id = generateId();
+    menuiseries.push(id);
+    renderMenuiserie(id);
+}
 
-            <section class="section">
-                <h3>💰 Tarification</h3>
-                <table class="tarif-table">
-                    <tr>
-                        <td><strong>Prix unitaire</strong></td>
-                        <td>${data.prixUnitaire.toFixed(2)} €</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Quantité</strong></td>
-                        <td>${data.quantite}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Sous-total</strong></td>
-                        <td>${(data.prixUnitaire * data.quantite).toFixed(2)} €</td>
-                    </tr>
-                    ${data.remise > 0 ? `
-                    <tr class="remise">
-                        <td><strong>Remise (${data.remise}%)</strong></td>
-                        <td>-${((data.prixUnitaire * data.quantite * data.remise) / 100).toFixed(2)} €</td>
-                    </tr>
-                    ` : ''}
-                    <tr class="total">
-                        <td><strong>TOTAL TTC</strong></td>
-                        <td><strong>${prixTotal.toFixed(2)} €</strong></td>
-                    </tr>
-                </table>
-                <p><strong>Délai de livraison :</strong> ${data.delai} jours</p>
-            </section>
+function removeMenuiserie(id) {
+    menuiseries = menuiseries.filter(m => m !== id);
+    document.querySelector(`[data-menuiserie="${id}"]`).remove();
+}
 
-            <footer class="report-footer">
-                <p>Devis établi le ${data.dateEdition} - Merci de votre confiance !</p>
-            </footer>
+function renderMenuiserie(id) {
+    const container = document.getElementById('menuiseriesContainer');
+    const menuiserieDiv = document.createElement('div');
+    menuiserieDiv.setAttribute('data-menuiserie', id);
+    menuiserieDiv.className = 'menuiserie-section';
+
+    menuiserieDiv.innerHTML = `
+        <div class="menuiserie-header">
+            <h3>Menuiserie #${menuiseries.indexOf(id) + 1}</h3>
+            <button type="button" class="btn-danger" data-remove="${id}">✕ Supprimer</button>
+        </div>
+
+        <div class="form-group">
+            <label for="bicoloration_${id}">Bicoloration</label>
+            <select id="bicoloration_${id}" data-field="bicoloration_${id}" required>
+                <option value="">-- Choisir --</option>
+                <option value="Mono">Mono</option>
+                <option value="Bi">Bi</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="pose_${id}">Type de pose</label>
+            <select id="pose_${id}" data-field="pose_${id}" required>
+                <option value="">-- Choisir --</option>
+                <option value="Applique">Applique</option>
+                <option value="Tunnel">Tunnel</option>
+                <option value="Feuillure">Feuillure</option>
+                <option value="Rénovation">Rénovation</option>
+            </select>
+        </div>
+
+        <div class="ouvertures-container"></div>
+        <button type="button" class="btn-secondary" data-add-ouverture="${id}">+ Ajouter une ouverture</button>
+    `;
+
+    container.appendChild(menuiserieDiv);
+
+    // Event listeners
+    menuiserieDiv.querySelector(`[data-remove="${id}"]`).addEventListener('click', () => removeMenuiserie(id));
+    menuiserieDiv.querySelector(`[data-add-ouverture="${id}"]`).addEventListener('click', () => addOuverture(id));
+
+    // Ajouter une première ouverture par défaut
+    addOuverture(id);
+}
+
+// ====================================
+// GESTION OUVERTURES
+// ====================================
+
+function addOuverture(menuiserieId) {
+    const menuiserieDiv = document.querySelector(`[data-menuiserie="${menuiserieId}"]`);
+    const container = menuiserieDiv.querySelector('.ouvertures-container');
+    const index = container.querySelectorAll('.ouverture-item').length;
+
+    const ouvertureDiv = document.createElement('div');
+    ouvertureDiv.className = 'ouverture-item';
+    ouvertureDiv.innerHTML = `
+        <h4>Ouverture ${index + 1}</h4>
+        
+        <div class="form-group">
+            <label for="type_${menuiserieId}_${index}">Type d'ouverture</label>
+            <select id="type_${menuiserieId}_${index}" data-field="type_${menuiserieId}_${index}" required>
+                <option value="">-- Choisir --</option>
+                <option value="Fenêtre">Fenêtre</option>
+                <option value="Porte">Porte</option>
+                <option value="Baie vitrée">Baie vitrée</option>
+                <option value="Autre">Autre</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="largeurs_${menuiserieId}_${index}">Largeurs (mm, séparées par virgule)</label>
+            <input type="text" id="largeurs_${menuiserieId}_${index}" data-field="largeurs_${menuiserieId}_${index}" placeholder="Ex: 1000, 1200, 1500">
+        </div>
+
+        <div class="form-group">
+            <label for="hauteurs_${menuiserieId}_${index}">Hauteurs (mm, séparées par virgule)</label>
+            <input type="text" id="hauteurs_${menuiserieId}_${index}" data-field="hauteurs_${menuiserieId}_${index}" placeholder="Ex: 1200, 1500">
+        </div>
+
+        <div class="form-group">
+            <label for="schema_${menuiserieId}_${index}">Schéma</label>
+            <select id="schema_${menuiserieId}_${index}" data-field="schema_${menuiserieId}_${index}" required>
+                <option value="">-- Choisir --</option>
+                ${Object.entries(SCHEMAS).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}
+            </select>
+        </div>
+
+        <div class="schema-preview" id="preview_${menuiserieId}_${index}"></div>
+        
+        <button type="button" class="btn-secondary btn-small" data-remove-ouverture="${menuiserieId}_${index}">✕ Supprimer</button>
+    `;
+
+    container.appendChild(ouvertureDiv);
+
+    // Event listeners
+    const schemaSelect = ouvertureDiv.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
+    schemaSelect.addEventListener('change', () => {
+        updateSchemaPreview(menuiserieId, index);
+    });
+
+    ouvertureDiv.querySelector(`[data-remove-ouverture="${menuiserieId}_${index}"]`).addEventListener('click', () => {
+        ouvertureDiv.remove();
+    });
+}
+
+function updateSchemaPreview(menuiserieId, index) {
+    const schemaSelect = document.querySelector(`[data-field="schema_${menuiserieId}_${index}"]`);
+    const previewDiv = document.getElementById(`preview_${menuiserieId}_${index}`);
+    const schemaKey = schemaSelect.value;
+
+    if (!schemaKey) {
+        previewDiv.innerHTML = '';
+        return;
+    }
+
+    // Charger le SVG
+    const svgPath = `assets/schemas/${schemaKey}.svg`;
+    fetch(svgPath)
+        .then(response => response.text())
+        .then(svgContent => {
+            previewDiv.innerHTML = svgContent;
+            previewDiv.querySelector('svg').style.maxWidth = '200px';
+            previewDiv.querySelector('svg').style.height = 'auto';
+        })
+        .catch(err => console.error('Erreur chargement SVG:', err));
+}
+
+// ====================================
+// GÉNÉRATION PDF
+// ====================================
+
+function generatePDF() {
+    // Validation basique
+    if (!document.getElementById('client').value) {
+        alert('Veuillez remplir le nom du client');
+        return;
+    }
+
+    const cotationData = getCotationData();
+    const allMenuiseries = menuiseries.map(id => getMenuiserieData(id));
+
+    // Créer contenu HTML pour PDF
+    const htmlContent = generateHTMLReport(cotationData, allMenuiseries);
+
+    // Créer blob et télécharger
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cotation_${cotationData.reference || 'menuiseries'}_${cotationData.date}.html`;
+    a.click();
+}
+
+function generateHTMLReport(cotation, menuiseries) {
+    let html = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Rapport Cotation</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; }
+            h1 { color: #333; text-align: center; }
+            .cotation-header { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+            .cotation-header p { margin: 8px 0; }
+            .menuiserie-section { page-break-inside: avoid; margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+            .menuiserie-section h2 { color: #0066cc; margin-top: 0; }
+            .ouverture-item { margin: 15px 0; padding: 10px; background: #fafafa; border-left: 4px solid #0066cc; }
+            .schema-img { max-width: 300px; margin: 10px 0; }
+            .dims { margin: 10px 0; font-size: 14px; }
+        </style>
+    </head>
+    <body>
+        <h1>📋 Rapport Cotation Menuiseries</h1>
+        <div class="cotation-header">
+            <p><strong>Client:</strong> ${cotation.client}</p>
+            <p><strong>Référence:</strong> ${cotation.reference}</p>
+            <p><strong>Date:</strong> ${cotation.date}</p>
         </div>
     `;
+
+    menuiseries.forEach((menu, idx) => {
+        html += `
+        <div class="menuiserie-section">
+            <h2>Menuiserie ${idx + 1}</h2>
+            <p><strong>Bicoloration:</strong> ${menu.bicoloration}</p>
+            <p><strong>Type de pose:</strong> ${menu.pose}</p>
+        `;
+
+        menu.ouvertures.forEach((ouv, ouvIdx) => {
+            html += `
+            <div class="ouverture-item">
+                <h3>Ouverture ${ouvIdx + 1}</h3>
+                <p><strong>Type:</strong> ${ouv.type}</p>
+                <div class="dims">
+                    <strong>Largeurs (mm):</strong> ${ouv.largeurs.join(', ')}
+                </div>
+                <div class="dims">
+                    <strong>Hauteurs (mm):</strong> ${ouv.hauteurs.join(', ')}
+                </div>
+                ${ouv.schema ? `<div class="schema-info"><strong>Schéma:</strong> ${SCHEMAS[ouv.schema]}</div>` : ''}
+            </div>
+            `;
+        });
+
+        html += `</div>`;
+    });
+
+    html += `
+        <footer style="margin-top: 50px; text-align: center; color: #999; font-size: 12px;">
+            <p>Généré le ${new Date().toLocaleString('fr-FR')}</p>
+        </footer>
+    </body>
+    </html>
+    `;
+
+    return html;
 }
 
-// Obtenir le label depuis la valeur
-function getLabel(value) {
-    const labels = {
-        'fenetre-1-vantail': 'Fenêtre 1 vantail',
-        'fenetre-2-vantaux': 'Fenêtre 2 vantaux',
-        'porte-1-vantail': 'Porte 1 vantail',
-        'porte-2-vantaux': 'Porte 2 vantaux',
-        'coulissant': 'Coulissant',
-        'oscillo-battant': 'Oscillo-battant',
-        'chassis-fixe': 'Châssis fixe',
-        'autre': 'Autre',
-        'applique': 'Applique',
-        'tunnel': 'Tunnel',
-        'feuillure': 'Feuillure',
-        'renovation': 'Rénovation',
-        'pvc': 'PVC',
-        'aluminium': 'Aluminium',
-        'bois': 'Bois',
-        'bois-alu': 'Bois-Aluminium',
-        'simple': 'Simple',
-        'double': 'Double',
-        'triple': 'Triple'
-    };
-    return labels[value] || value;
-}
+// ====================================
+// INITIALIZATION
+// ====================================
 
-// Générer le PDF
-function generatePDF(data) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    
-    const schema = schémas[data.menuiserieType] || schémas['autre'];
-    const prixTotal = (data.prixUnitaire * data.quantite) * (1 - data.remise / 100);
-    
-    let yPosition = 10;
-    const pageHeight = doc.internal.pageSize.height;
-    const margin = 10;
-    const maxWidth = 190;
-    
-    // HEADER
-    doc.setFontSize(16);
-    doc.text('Devis de Cotation Menuiserie', margin, yPosition);
-    yPosition += 8;
-    
-    doc.setFontSize(10);
-    doc.text(`Date d'édition : ${data.dateEdition}`, margin, yPosition);
-    yPosition += 5;
-    doc.text(`Validité : jusqu'au ${data.dateValidite}`, margin, yPosition);
-    yPosition += 10;
-    
-    // CLIENT
-    doc.setFontSize(12);
-    doc.text('CLIENT', margin, yPosition);
-    yPosition += 5;
-    doc.setFontSize(10);
-    doc.text(`Nom : ${data.clientName}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Email : ${data.clientEmail}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Téléphone : ${data.clientPhone || 'N/A'}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Adresse : ${data.clientAddress || 'N/A'}`, margin, yPosition);
-    yPosition += 10;
-    
-    // SPÉCIFICATIONS
-    doc.setFontSize(12);
-    doc.text('SPÉCIFICATIONS', margin, yPosition);
-    yPosition += 5;
-    doc.setFontSize(10);
-    doc.text(`Type : ${getLabel(data.menuiserieType)}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Pose : ${getLabel(data.typeDepose)}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Dimensions : ${data.largeur} mm × ${data.hauteur} mm`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Matériau : ${getLabel(data.materiau)}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Vitrage : ${getLabel(data.vitrage)}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Couleur : ${data.couleur || 'N/A'}`, margin, yPosition);
-    yPosition += 6;
-    
-    if (data.observation) {
-        doc.text(`Observations : ${data.observation}`, margin, yPosition);
-        yPosition += 6;
-    }
-    
-    // Vérifier si on a besoin d'une nouvelle page avant la tarification
-    if (yPosition > pageHeight - 50) {
-        doc.addPage();
-        yPosition = 10;
-    }
-    
-    // TARIFICATION
-    doc.setFontSize(12);
-    doc.text('TARIFICATION', margin, yPosition);
-    yPosition += 8;
-    
-    doc.setFontSize(10);
-    doc.text(`Prix unitaire : ${data.prixUnitaire.toFixed(2)} €`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Quantité : ${data.quantite}`, margin, yPosition);
-    yPosition += 4;
-    doc.text(`Sous-total : ${(data.prixUnitaire * data.quantite).toFixed(2)} €`, margin, yPosition);
-    yPosition += 4;
-    
-    if (data.remise > 0) {
-        doc.text(`Remise (${data.remise}%) : -${((data.prixUnitaire * data.quantite * data.remise) / 100).toFixed(2)} €`, margin, yPosition);
-        yPosition += 4;
-    }
-    
-    doc.setFontSize(12);
-    doc.text(`TOTAL TTC : ${prixTotal.toFixed(2)} €`, margin, yPosition);
-    yPosition += 6;
-    
-    doc.setFontSize(10);
-    doc.text(`Délai de livraison : ${data.delai} jours`, margin, yPosition);
-    yPosition += 10;
-    
-    // FOOTER
-    doc.setFontSize(9);
-    doc.text(`Devis établi le ${data.dateEdition} - Merci de votre confiance !`, margin, pageHeight - 10);
-    
-    // Générer le PDF
-    doc.save(`devis_${data.clientName.replace(/\s+/g, '_')}_${data.dateEdition.replace(/\//g, '-')}.pdf`);
-}
+document.addEventListener('DOMContentLoaded', () => {
+    // Définir la date du jour par défaut
+    document.getElementById('date').valueAsDate = new Date();
+
+    // Event listeners
+    document.getElementById('addMenuiserie').addEventListener('click', addMenuiserie);
+    document.getElementById('generatePdf').addEventListener('click', generatePDF);
+
+    // Ajouter une première menuiserie
+    addMenuiserie();
+});
