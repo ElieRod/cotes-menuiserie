@@ -1,123 +1,292 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cotations Menuiserie</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Générateur de cotations pour menuiseries">
+  <title>Atelier — Générateur de cotations</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- jsPDF doit être chargé avant app.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Générateur de Cotations Menuiserie</h1>
-            <p>Créez vos devis de menuiserie facilement</p>
-        </header>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Accueil Atelier">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span>
+          <strong>ATELIER</strong>
+          <small>COTATIONS MENUISERIE</small>
+        </span>
+      </a>
 
-        <main>
-            <section class="form-section">
-                <h2>Informations du Devis</h2>
-                <form id="quoteForm">
-                    <!-- Référence -->
-                    <div class="form-group">
-                        <label for="reference">Référence Devis:</label>
-                        <input type="text" id="reference" name="reference" placeholder="Ex: DEV-2024-001" required>
-                    </div>
+      <span class="topbar-note">
+        OUTIL DE CHIFFRAGE <i></i>
+      </span>
+    </header>
 
-                    <!-- Client -->
-                    <div class="form-group">
-                        <label for="client">Client:</label>
-                        <input type="text" id="client" name="client" placeholder="Nom du client" required>
-                    </div>
-
-                    <!-- Date -->
-                    <div class="form-group">
-                        <label for="date">Date:</label>
-                        <input type="date" id="date" name="date" required>
-                    </div>
-
-                    <!-- Menuiseries -->
-                    <h3>Menuiseries</h3>
-                    <div id="menuiseriesContainer"></div>
-                    <button type="button" id="addMenuiserie" class="btn-add">+ Ajouter une menuiserie</button>
-
-                    <!-- Bouton Générer PDF -->
-                    <button type="submit" id="generatePdf" class="btn-submit">Générer Rapport PDF</button>
-                </form>
-            </section>
-        </main>
-    </div>
-
-    <!-- Modal pour Menuiserie -->
-    <div id="menuiserieModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Ajouter une Menuiserie</h2>
-            <form id="menuiserieForm">
-                <div class="form-group">
-                    <label for="menuisery">Type:</label>
-                    <select id="menuisery" name="menuisery">
-                        <option value="porte">Porte</option>
-                        <option value="fenetre">Fenêtre</option>
-                        <option value="baie">Baie vitrée</option>
-                        <option value="volet">Volet</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="pose">Type de pose:</label>
-                    <select id="pose" name="pose">
-                        <option value="applique">Applique</option>
-                        <option value="encastree">Encastrée</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="width">Largeur (mm):</label>
-                    <input type="number" id="width" name="width" placeholder="500" min="100" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="height">Hauteur (mm):</label>
-                    <input type="number" id="height" name="height" placeholder="1000" min="100" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="material">Matériau:</label>
-                    <select id="material" name="material">
-                        <option value="bois">Bois</option>
-                        <option value="alu">Aluminium</option>
-                        <option value="pvc">PVC</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="glazing">Vitrage:</label>
-                    <select id="glazing" name="glazing">
-                        <option value="simple">Simple</option>
-                        <option value="double">Double</option>
-                        <option value="triple">Triple</option>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn-submit">Ajouter</button>
-            </form>
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="eyebrow">
+          <span></span>
+          Nouveau devis
         </div>
-    </div>
 
-    <!-- Rapport PDF -->
-    <div id="report" class="report" style="display:none;">
-        <div id="reportContent">
-            <h1>Devis Menuiserie</h1>
-            <p><strong>Référence:</strong> <span id="reportReference">-</span></p>
-            <p><strong>Client:</strong> <span id="reportClient">-</span></p>
-            <p><strong>Date:</strong> <span id="reportDate">-</span></p>
-            <h2>Détails des menuiseries</h2>
-            <div id="reportMenuiseries"></div>
+        <h1 id="page-title">
+          Construire une cotation<br>
+          <em>clairement.</em>
+        </h1>
+
+        <p>
+          Centralisez les informations du chantier et détaillez chaque menuiserie
+          pour générer un rapport PDF prêt à partager.
+        </p>
+      </section>
+
+      <form id="quoteForm" novalidate>
+        <section class="card general-card" aria-labelledby="general-title">
+          <div class="section-heading">
+            <div class="section-number">01</div>
+
+            <div>
+              <p class="kicker">En-tête du document</p>
+              <h2 id="general-title">Informations générales</h2>
+            </div>
+          </div>
+
+          <div class="field-grid field-grid--three">
+            <div class="field">
+              <label for="quoteReference">
+                Référence devis <span>*</span>
+              </label>
+              <input
+                id="quoteReference"
+                name="quoteReference"
+                type="text"
+                placeholder="DEV-2026-001"
+                required
+              >
+            </div>
+
+            <div class="field">
+              <label for="clientName">
+                Client <span>*</span>
+              </label>
+              <input
+                id="clientName"
+                name="clientName"
+                type="text"
+                placeholder="Nom du client"
+                required
+              >
+            </div>
+
+            <div class="field">
+              <label for="quoteDate">
+                Date <span>*</span>
+              </label>
+              <input
+                id="quoteDate"
+                name="quoteDate"
+                type="date"
+                required
+              >
+            </div>
+          </div>
+        </section>
+
+        <section class="card join-card" aria-labelledby="join-title">
+          <div class="section-heading section-heading--wide">
+            <div class="section-number">02</div>
+
+            <div>
+              <p class="kicker">Détail du devis</p>
+              <h2 id="join-title">
+                Menuiseries
+                <span id="itemCount" class="count-badge">0</span>
+              </h2>
+            </div>
+
+            <p class="section-help">
+              Ajoutez une ligne par élément à chiffrer.
+            </p>
+          </div>
+
+          <div
+            id="menuiseriesList"
+            class="menuiseries-list"
+            aria-live="polite"
+          ></div>
+
+          <button
+            id="addMenuiserie"
+            class="btn btn-secondary"
+            type="button"
+          >
+            <span class="plus">+</span>
+            Ajouter une menuiserie
+          </button>
+        </section>
+
+        <div
+          class="form-feedback"
+          id="formFeedback"
+          role="status"
+          aria-live="polite"
+        ></div>
+
+        <div class="actions">
+          <span class="required-note">
+            <span>*</span>
+            Champs obligatoires
+          </span>
+
+          <button
+            id="generatePdf"
+            class="btn btn-primary"
+            type="submit"
+          >
+            <span class="pdf-icon" aria-hidden="true">↓</span>
+            Générer le rapport PDF
+          </button>
         </div>
-    </div>
+      </form>
+    </main>
 
-    <script src="schemas.js"></script>
-    <script src="app.js"></script>
-    <script src="script.js"></script>
+    <footer>
+      <span>ATELIER / COTATIONS</span>
+      <span>Document généré localement · aucune donnée envoyée</span>
+    </footer>
+  </div>
+
+  <template id="menuiserieTemplate">
+    <article class="menuiserie-card">
+      <div class="item-topline">
+        <div class="item-label">
+          <span class="item-index">01</span>
+          <h3>Menuiserie</h3>
+        </div>
+
+        <button
+          class="remove-item"
+          type="button"
+          aria-label="Supprimer cette menuiserie"
+        >
+          Supprimer <span aria-hidden="true">×</span>
+        </button>
+      </div>
+
+      <div class="field-grid field-grid--six">
+        <div class="field field--type">
+          <label>
+            Type <span>*</span>
+          </label>
+
+          <select name="type" required>
+            <option value="">Sélectionner</option>
+            <option>Fenêtre</option>
+            <option>Porte-fenêtre</option>
+            <option>Baie vitrée</option>
+            <option>Porte d'entrée</option>
+            <option>Volet</option>
+            <option>Autre</option>
+          </select>
+        </div>
+
+        <div class="field field--model">
+          <label>
+            Modèle <span>*</span>
+          </label>
+
+          <input
+            name="model"
+            type="text"
+            placeholder="Ex. 2 vantaux"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>
+            Largeur <small>(mm)</small> <span>*</span>
+          </label>
+
+          <input
+            name="width"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="1200"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>
+            Hauteur <small>(mm)</small> <span>*</span>
+          </label>
+
+          <input
+            name="height"
+            type="number"
+            min="1"
+            step="1"
+            placeholder="1350"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label>
+            Position <span>*</span>
+          </label>
+
+          <select name="position" required>
+            <option value="">Sélectionner</option>
+            <option>Pose en neuf</option>
+            <option>Rénovation</option>
+            <option>Dépose totale</option>
+            <option>En applique</option>
+            <option>En tunnel</option>
+            <option>En feuillure</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>
+            Quantité <span>*</span>
+          </label>
+
+          <input
+            name="quantity"
+            type="number"
+            min="1"
+            step="1"
+            value="1"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label>
+          Observation <small>(facultatif)</small>
+        </label>
+
+        <textarea
+          name="observation"
+          rows="2"
+          placeholder="Teinte, vitrage, contrainte de pose…"
+        ></textarea>
+      </div>
+    </article>
+  </template>
 </body>
 </html>
