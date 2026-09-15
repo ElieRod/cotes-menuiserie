@@ -1,306 +1,295 @@
-(() => {
-  "use strict";
+// ============================================================
+// COTATION MENUISERIES - APP.JS (CORRIGÉ)
+// Aligné sur les IDs réels du HTML
+// ============================================================
 
-  // ========== ELEMENTS DOM ==========
-  const formElements = {
-    form: document.getElementById("quoteForm"),
-    reference: document.getElementById("reference"),
-    client: document.getElementById("client"),
-    date: document.getElementById("date"),
-    addMenuiserie: document.getElementById("addMenuiserie"),
-    generatePdf: document.getElementById("generatePdf"),
-    menuiseriesContainer: document.getElementById("menuiseriesContainer"),
-    menuiserieModal: document.getElementById("menuiserieModal"),
-    menuiserieForm: document.getElementById("menuiserieForm"),
-    closeModal: document.getElementById("closeModal"),
-    saveMenuiserie: document.getElementById("saveMenuiserie"),
+const TYPES = {
+  fenetre: { label: 'Fenêtre', color: '#3498db' },
+  porte: { label: 'Porte', color: '#e74c3c' },
+  baie: { label: 'Baie vitrée', color: '#2ecc71' },
+  volet: { label: 'Volet', color: '#f39c12' }
+};
+
+const POSES = {
+  applique: 'En applique',
+  tunnel: 'En tunnel',
+  feuillure: 'En feuillure'
+};
+
+const MATERIAUX = {
+  pvc: 'PVC',
+  alu: 'Aluminium',
+  bois: 'Bois',
+  composite: 'Composite'
+};
+
+const VITRAGES = {
+  simple: 'Simple',
+  double: 'Double',
+  triple: 'Triple'
+};
+
+let menuiseries = [];
+let currentEditIndex = null;
+
+// ========== VÉRIFICATION DES ÉLÉMENTS CRITIQUES ==========
+document.addEventListener('DOMContentLoaded', function() {
+  const criticalElements = [
+    '#menuiseriesContainer',
+    '#addMenuiserie',
+    '#generatePdf'
+  ];
+
+  for (const selector of criticalElements) {
+    if (!document.querySelector(selector)) {
+      console.error(`❌ Élément manquant : ${selector}`);
+      return;
+    }
+  }
+
+  console.log('✅ Tous les éléments critiques présents');
+  initializeApp();
+});
+
+function initializeApp() {
+  const addBtn = document.getElementById('addMenuiserie');
+  const generateBtn = document.getElementById('generatePdf');
+
+  // Bouton Ajouter menuiserie
+  if (addBtn) {
+    addBtn.addEventListener('click', openMenuiserieModal);
+  }
+
+  // Bouton Générer PDF
+  if (generateBtn) {
+    generateBtn.addEventListener('click', generatePDF);
+  }
+
+  // Fermer modal avec X
+  const closeBtn = document.querySelector('.close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeMenuiserieModal);
+  }
+
+  // Soumettre formulaire
+  const form = document.getElementById('menuiserieForm');
+  if (form) {
+    form.addEventListener('submit', saveMenuiserie);
+  }
+
+  // Fermer modal en cliquant dehors
+  const modal = document.getElementById('menuiserieModal');
+  if (modal) {
+    window.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        closeMenuiserieModal();
+      }
+    });
+  }
+
+  loadMenuiseries();
+}
+
+// ========== MODAL MENUISERIE ==========
+function openMenuiserieModal() {
+  currentEditIndex = null;
+  document.getElementById('menuiserieForm').reset();
+  document.getElementById('menuiserieModal').style.display = 'block';
+  document.getElementById('formTitle').textContent = 'Ajouter une menuiserie';
+}
+
+function closeMenuiserieModal() {
+  document.getElementById('menuiserieModal').style.display = 'none';
+  currentEditIndex = null;
+}
+
+function saveMenuiserie(e) {
+  e.preventDefault();
+
+  const menuiserie = {
+    type: document.getElementById('menuisery').value,
+    pose: document.getElementById('pose').value,
+    width: parseFloat(document.getElementById('width').value),
+    height: parseFloat(document.getElementById('height').value,
+    material: document.getElementById('material').value,
+    glazing: document.getElementById('glazing').value,
+    notes: document.getElementById('notes').value || ''
   };
 
-  // ========== INITIALISATION ==========
-  if (!formElements.form) {
-    console.error("Form not found");
+  if (!menuiserie.type || !menuiserie.pose || !menuiserie.width || !menuiserie.height) {
+    alert('❌ Veuillez remplir tous les champs obligatoires');
     return;
   }
 
-  let editingIndex = null;
-  let menuiseries = [];
-
-  // Charger les données du localStorage
-  function loadData() {
-    const saved = localStorage.getItem("quotationData");
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        formElements.reference.value = data.reference || "";
-        formElements.client.value = data.client || "";
-        formElements.date.value = data.date || "";
-        menuiseries = data.menuiseries || [];
-        renderMenuiseries();
-      } catch (e) {
-        console.error("Erreur lors du chargement des données", e);
-      }
-    }
+  if (currentEditIndex !== null) {
+    menuiseries[currentEditIndex] = menuiserie;
+  } else {
+    menuiseries.push(menuiserie);
   }
 
-  // Sauvegarder les données dans le localStorage
-  function saveData() {
-    const data = {
-      reference: formElements.reference.value,
-      client: formElements.client.value,
-      date: formElements.date.value,
-      menuiseries: menuiseries,
-    };
-    localStorage.setItem("quotationData", JSON.stringify(data));
+  saveMenuiseries();
+  closeMenuiserieModal();
+  displayMenuiseries();
+}
+
+// ========== AFFICHAGE DES MENUISERIES ==========
+function displayMenuiseries() {
+  const container = document.getElementById('menuiseriesContainer');
+  container.innerHTML = '';
+
+  if (menuiseries.length === 0) {
+    container.innerHTML = '<p style="text-align: center; color: #999;">Aucune menuiserie ajoutée</p>';
+    return;
   }
 
-  // ========== GESTION MENUISERIES ==========
-  function renderMenuiseries() {
-    formElements.menuiseriesContainer.innerHTML = "";
-    menuiseries.forEach((m, index) => {
-      const card = document.createElement("div");
-      card.className = "menuiserie-card";
-      card.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h4 style="margin: 0;">Menuiserie ${index + 1}</h4>
-          <button type="button" class="delete-btn" data-index="${index}">✕ Supprimer</button>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-          <div>
-            <strong>Type :</strong> ${m.type || "—"}
-          </div>
-          <div>
-            <strong>Modèle :</strong> ${m.modele || "—"}
-          </div>
-          <div>
-            <strong>Largeur (mm) :</strong> ${m.largeur || "—"}
-          </div>
-          <div>
-            <strong>Hauteur (mm) :</strong> ${m.hauteur || "—"}
-          </div>
-          <div>
-            <strong>Position :</strong> ${m.position || "—"}
-          </div>
-          <div>
-            <strong>Quantité :</strong> ${m.quantite || "1"}
-          </div>
-        </div>
-        ${m.observation ? `<div style="margin-top: 8px; padding: 8px; background: #f5f5f5; border-radius: 4px;"><strong>Observation :</strong> ${m.observation}</div>` : ""}
-        <button type="button" class="edit-btn" data-index="${index}" style="margin-top: 12px; padding: 6px 12px; background: #4a7c59; color: white; border: none; border-radius: 4px; cursor: pointer;">✎ Modifier</button>
-      `;
-      formElements.menuiseriesContainer.appendChild(card);
-    });
+  menuiseries.forEach((m, index) => {
+    const card = document.createElement('div');
+    card.className = 'menuiserie-card';
+    card.style.borderLeft = `5px solid ${TYPES[m.type]?.color || '#999'}`;
 
-    // Événements de suppression et édition
-    formElements.menuiseriesContainer.querySelectorAll(".delete-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        const idx = parseInt(e.target.dataset.index);
-        menuiseries.splice(idx, 1);
-        saveData();
-        renderMenuiseries();
-      });
-    });
+    card.innerHTML = `
+      <div class="menuiserie-header">
+        <h3>${TYPES[m.type]?.label || m.type}</h3>
+        <span class="badge">${m.width} × ${m.height} mm</span>
+      </div>
+      <div class="menuiserie-details">
+        <p><strong>Pose :</strong> ${POSES[m.pose] || m.pose}</p>
+        <p><strong>Matériau :</strong> ${MATERIAUX[m.material] || m.material}</p>
+        <p><strong>Vitrage :</strong> ${VITRAGES[m.glazing] || m.glazing}</p>
+        ${m.notes ? `<p><strong>Notes :</strong> ${escapeHtml(m.notes)}</p>` : ''}
+      </div>
+      <div class="menuiserie-actions">
+        <button class="btn-edit" onclick="editMenuiserie(${index})">✏️ Éditer</button>
+        <button class="btn-delete" onclick="deleteMenuiserie(${index})">🗑️ Supprimer</button>
+      </div>
+    `;
 
-    formElements.menuiseriesContainer.querySelectorAll(".edit-btn").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        editingIndex = parseInt(e.target.dataset.index);
-        const m = menuiseries[editingIndex];
-        document.getElementById("menuisery").value = m.type || "";
-        document.getElementById("modele").value = m.modele || "";
-        document.getElementById("pose").value = m.position || "";
-        document.getElementById("width").value = m.largeur || "";
-        document.getElementById("height").value = m.hauteur || "";
-        document.getElementById("quantite").value = m.quantite || "1";
-        document.getElementById("observation").value = m.observation || "";
-        formElements.menuiserieModal.style.display = "block";
-      });
-    });
+    container.appendChild(card);
+  });
+}
 
-    updateMenuiserieCount();
+function editMenuiserie(index) {
+  currentEditIndex = index;
+  const m = menuiseries[index];
+
+  document.getElementById('menuisery').value = m.type;
+  document.getElementById('pose').value = m.pose;
+  document.getElementById('width').value = m.width;
+  document.getElementById('height').value = m.height;
+  document.getElementById('material').value = m.material;
+  document.getElementById('glazing').value = m.glazing;
+  document.getElementById('notes').value = m.notes || '';
+
+  document.getElementById('formTitle').textContent = 'Éditer une menuiserie';
+  document.getElementById('menuiserieModal').style.display = 'block';
+}
+
+function deleteMenuiserie(index) {
+  if (confirm('❌ Êtes-vous sûr de vouloir supprimer cette menuiserie ?')) {
+    menuiseries.splice(index, 1);
+    saveMenuiseries();
+    displayMenuiseries();
+  }
+}
+
+// ========== SAUVEGARDE LOCALE ==========
+function saveMenuiseries() {
+  localStorage.setItem('menuiseries', JSON.stringify(menuiseries));
+}
+
+function loadMenuiseries() {
+  const saved = localStorage.getItem('menuiseries');
+  menuiseries = saved ? JSON.parse(saved) : [];
+  displayMenuiseries();
+}
+
+// ========== GÉNÉRATION PDF ==========
+async function generatePDF() {
+  if (menuiseries.length === 0) {
+    alert('⚠️ Aucune menuiserie à exporter');
+    return;
   }
 
-  function updateMenuiserieCount() {
-    const badge = document.querySelector(".menu-count");
-    if (badge) badge.textContent = menuiseries.length;
-  }
+  // Créer un contenu HTML à imprimer
+  let pdfContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Rapport Menuiseries</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; border-bottom: 3px solid #3498db; padding-bottom: 10px; }
+        .menuiserie { 
+          page-break-inside: avoid;
+          border: 1px solid #ddd; 
+          padding: 15px; 
+          margin: 20px 0;
+          background: #f9f9f9;
+        }
+        .menuiserie-type { 
+          font-size: 18px; 
+          font-weight: bold; 
+          color: #2c3e50;
+          margin-bottom: 10px;
+        }
+        .detail { margin: 8px 0; }
+        .label { font-weight: bold; color: #555; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #3498db; color: white; }
+        .summary { 
+          margin-top: 30px; 
+          padding: 15px; 
+          background: #ecf0f1; 
+          border-radius: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>📋 Rapport Menuiseries</h1>
+      <p><strong>Date :</strong> ${new Date().toLocaleDateString('fr-FR')}</p>
+  `;
 
-  // ========== MODAL ==========
-  if (formElements.addMenuiserie) {
-    formElements.addMenuiserie.addEventListener("click", () => {
-      editingIndex = null;
-      formElements.menuiserieForm.reset();
-      formElements.menuiserieModal.style.display = "block";
-    });
-  }
-
-  if (formElements.closeModal) {
-    formElements.closeModal.addEventListener("click", () => {
-      formElements.menuiserieModal.style.display = "none";
-      editingIndex = null;
-    });
-  }
-
-  window.addEventListener("click", (e) => {
-    if (e.target === formElements.menuiserieModal) {
-      formElements.menuiserieModal.style.display = "none";
-      editingIndex = null;
-    }
+  // Ajouter chaque menuiserie
+  menuiseries.forEach((m, index) => {
+    pdfContent += `
+      <div class="menuiserie">
+        <div class="menuiserie-type">${index + 1}. ${TYPES[m.type]?.label || m.type}</div>
+        <div class="detail"><span class="label">Dimensions :</span> ${m.width} mm × ${m.height} mm</div>
+        <div class="detail"><span class="label">Pose :</span> ${POSES[m.pose] || m.pose}</div>
+        <div class="detail"><span class="label">Matériau :</span> ${MATERIAUX[m.material] || m.material}</div>
+        <div class="detail"><span class="label">Vitrage :</span> ${VITRAGES[m.glazing] || m.glazing}</div>
+        ${m.notes ? `<div class="detail"><span class="label">Notes :</span> ${escapeHtml(m.notes)}</div>` : ''}
+      </div>
+    `;
   });
 
-  if (formElements.saveMenuiserie) {
-    formElements.saveMenuiserie.addEventListener("click", () => {
-      const type = document.getElementById("menuisery").value.trim();
-      const modele = document.getElementById("modele").value.trim();
-      const position = document.getElementById("pose").value.trim();
-      const largeur = document.getElementById("width").value.trim();
-      const hauteur = document.getElementById("height").value.trim();
-      const quantite = document.getElementById("quantite").value.trim() || "1";
-      const observation = document.getElementById("observation").value.trim();
+  // Ajouter un résumé
+  pdfContent += `
+    <div class="summary">
+      <h2>📊 Résumé</h2>
+      <p><strong>Nombre total de menuiseries :</strong> ${menuiseries.length}</p>
+    </div>
+    </body>
+    </html>
+  `;
 
-      if (!type || !largeur || !hauteur || !position) {
-        alert("Veuillez remplir tous les champs obligatoires (Type, Largeur, Hauteur, Position).");
-        return;
-      }
+  // Ouvrir dans une nouvelle fenêtre pour imprimer/télécharger
+  const printWindow = window.open('', '', 'width=800,height=600');
+  printWindow.document.write(pdfContent);
+  printWindow.document.close();
+  printWindow.print();
+}
 
-      if (editingIndex !== null) {
-        menuiseries[editingIndex] = {
-          type,
-          modele,
-          position,
-          largeur,
-          hauteur,
-          quantite,
-          observation,
-        };
-      } else {
-        menuiseries.push({
-          type,
-          modele,
-          position,
-          largeur,
-          hauteur,
-          quantite,
-          observation,
-        });
-      }
-
-      saveData();
-      renderMenuiseries();
-      formElements.menuiserieModal.style.display = "none";
-      editingIndex = null;
-    });
-  }
-
-  // ========== GENERATION PDF ==========
-  if (formElements.generatePdf) {
-    formElements.generatePdf.addEventListener("click", () => {
-      if (typeof window.jspdf === "undefined" || !window.jspdf.jsPDF) {
-        alert("jsPDF n'est pas chargé. Vérifiez votre connexion Internet.");
-        return;
-      }
-
-      if (menuiseries.length === 0) {
-        alert("Veuillez ajouter au moins une menuiserie avant de générer le PDF.");
-        return;
-      }
-
-      const jsPDF = window.jspdf.jsPDF;
-      const doc = new jsPDF();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const margin = 10;
-      let yPosition = margin;
-
-      const today = new Date();
-      const dateStr = `${today.getDate().toString().padStart(2, "0")}/${(today.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${today.getFullYear()}`;
-
-      // En-tête
-      doc.setFontSize(18);
-      doc.setFont(undefined, "bold");
-      doc.text("COTATION MENUISERIE", margin, yPosition);
-      yPosition += 10;
-
-      // Infos générales
-      doc.setFontSize(11);
-      doc.setFont(undefined, "normal");
-      doc.text(`Référence : ${formElements.reference.value || "—"}`, margin, yPosition);
-      yPosition += 6;
-      doc.text(`Client : ${formElements.client.value || "—"}`, margin, yPosition);
-      yPosition += 6;
-      doc.text(`Date du devis : ${formElements.date.value || dateStr}`, margin, yPosition);
-      yPosition += 10;
-
-      // Titre menuiseries
-      doc.setFont(undefined, "bold");
-      doc.text("MENUISERIES", margin, yPosition);
-      yPosition += 8;
-
-      // Détail des menuiseries
-      doc.setFont(undefined, "normal");
-      doc.setFontSize(10);
-
-      menuiseries.forEach((m, idx) => {
-        // Vérifier s'il faut créer une nouvelle page
-        if (yPosition > pageHeight - 30) {
-          doc.addPage();
-          yPosition = margin;
-        }
-
-        // Titre menuiserie
-        doc.setFont(undefined, "bold");
-        doc.text(`Menuiserie ${idx + 1}`, margin, yPosition);
-        yPosition += 6;
-
-        // Détails
-        doc.setFont(undefined, "normal");
-        const details = [
-          `Type : ${m.type || "—"}`,
-          `Modèle : ${m.modele || "—"}`,
-          `Largeur : ${m.largeur || "—"} mm`,
-          `Hauteur : ${m.hauteur || "—"} mm`,
-          `Position : ${m.position || "—"}`,
-          `Quantité : ${m.quantite || "1"}`,
-        ];
-
-        details.forEach((detail) => {
-          if (yPosition > pageHeight - 20) {
-            doc.addPage();
-            yPosition = margin;
-          }
-          doc.text(detail, margin + 5, yPosition);
-          yPosition += 5;
-        });
-
-        if (m.observation) {
-          if (yPosition > pageHeight - 20) {
-            doc.addPage();
-            yPosition = margin;
-          }
-          doc.text(`Observation : ${m.observation}`, margin + 5, yPosition);
-          yPosition += 5;
-        }
-
-        yPosition += 5; // Espacement entre menuiseries
-      });
-
-      // Pied de page
-      const pageCount = doc.internal.pages.length - 1;
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(9);
-        doc.text(`Page ${i}/${pageCount}`, pageWidth - margin - 20, pageHeight - 5);
-      }
-
-      // Télécharger
-      const filename = `cotation-${formElements.client.value || "Client"}-${dateStr.replace(/\//g, "-")}.pdf`;
-      doc.save(filename);
-    });
-  }
-
-  // ========== AUTO-SAVE ==========
-  formElements.form.addEventListener("change", saveData);
-
-  // Charger au démarrage
-  loadData();
-})();
+// ========== ECHAPPER HTML ==========
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
